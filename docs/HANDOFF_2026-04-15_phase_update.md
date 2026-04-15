@@ -594,3 +594,16 @@
         - `audit_delivery_success_rate - audit_delivery_failure_rate`，保留 1 位小数
       - 目标：在失败压力指标之外，提供“成功-失败净值”视角，快速判定审计投递通道净健康趋势（正值偏健康，负值偏风险）。
       - 补充最小回归断言，校验字段存在且类型正确（`float`），保持接口兼容增强。
+
+69. Git 摘要与运营风险报告补充审计投递净健康等级（完成后增强）
+    - 文件：`backend/app/api/routes.py`、`backend/tests/test_api_smoke.py`
+    - 变更：
+      - `GET /api/v1/ops/git-sync/summary` 新增：
+        - `audit_delivery_net_health_level`（`healthy|warning|high_risk`）
+        - `audit_delivery_net_health_warning`（布尔值）
+      - `GET /api/v1/analytics/reports?report_type=ops_risk` 新增：
+        - `git_sync_audit_delivery_net_health_level`（`healthy|warning|high_risk`）
+        - `git_sync_audit_delivery_net_health_warning`（布尔值）
+      - 判定口径：基于净健康分（`success_rate - failure_rate`）分级，`<= -20` 判 `high_risk`，`<0` 判 `warning`，其余为 `healthy`。
+      - 目标：让净值指标可直接用于看板分层和告警触发，减少人工解读成本。
+      - 补充最小回归断言，校验字段存在、枚举合法和类型正确。
