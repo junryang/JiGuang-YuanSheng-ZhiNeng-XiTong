@@ -22,17 +22,34 @@ if (-not $CommitMessage) {
 }
 
 git add -A
+if ($LASTEXITCODE -ne 0) {
+    throw "git add failed."
+}
 if ($AllowEmpty.IsPresent) {
     git commit --allow-empty -m "$CommitMessage"
 } else {
     git commit -m "$CommitMessage"
 }
+if ($LASTEXITCODE -ne 0) {
+    throw "git commit failed."
+}
 
 git branch -M $Branch
+if ($LASTEXITCODE -ne 0) {
+    throw "git branch switch failed."
+}
 if ($env:GITHUB_TOKEN) {
-    git -c "http.https://github.com/.extraheader=AUTHORIZATION: bearer $($env:GITHUB_TOKEN)" push origin $Branch
+    $originUrl = (git remote get-url origin).Trim()
+    if (-not $originUrl) {
+        throw "origin remote is not configured."
+    }
+    $authUrl = $originUrl -replace '^https://', "https://x-access-token:$($env:GITHUB_TOKEN)@"
+    git push $authUrl $Branch
 } else {
     git push origin $Branch
+}
+if ($LASTEXITCODE -ne 0) {
+    throw "git push failed."
 }
 
 Write-Host "Sync completed: $Branch"
