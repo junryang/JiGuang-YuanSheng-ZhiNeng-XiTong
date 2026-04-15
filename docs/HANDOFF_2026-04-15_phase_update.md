@@ -522,3 +522,15 @@
       - 口径：读取 `git_sync_status` 事件 `context.audit_delivery`（`failed|success`）聚合计数与占比，分母为报告窗口内 `git_sync_event_count`。
       - 目标：在“同步成功/失败”之外，补齐“审计上报通道本身是否稳定”的观测维度，便于排查“主链路成功但审计旁路不稳定”场景。
       - 补充最小回归断言，校验新增字段存在且类型正确（`int`/`float`），保持返回结构兼容增强。
+
+63. Git 同步摘要补充审计投递健康字段（完成后增强）
+    - 文件：`backend/app/api/routes.py`、`backend/tests/test_api_smoke.py`
+    - 变更：
+      - `GET /api/v1/ops/git-sync/summary` 新增：
+        - `audit_delivery_success_count`
+        - `audit_delivery_failed_count`
+        - `audit_delivery_success_rate`
+        - `audit_delivery_failure_rate`
+      - 口径：在现有时间窗口与过滤条件下，聚合 `git_sync_status` 事件中 `context.audit_delivery`（`success|failed`）并计算占比（分母为 `totals.total`）。
+      - 目标：让 Git 摘要接口直接具备“同步主链路 + 审计旁路”双维健康观测能力，减少仅靠 `ops_risk` 报告排障的时延。
+      - 补充最小回归断言，校验新增字段存在且类型正确（`int`/`float`），保持接口向后兼容。

@@ -221,7 +221,7 @@ def test_git_sync_summary_endpoint():
             "status": "success",
             "source": "git_sync_once.ps1",
             "environment": "dev",
-            "context": {"status": "success", "branch": "main", "push_attempts": 1},
+            "context": {"status": "success", "branch": "main", "push_attempts": 1, "audit_delivery": "success"},
         },
     )
     client.post(
@@ -231,7 +231,7 @@ def test_git_sync_summary_endpoint():
             "status": "failure",
             "source": "git_auto_sync.ps1",
             "environment": "dev",
-            "context": {"status": "failure", "branch": "main", "push_attempts": 2},
+            "context": {"status": "failure", "branch": "main", "push_attempts": 2, "audit_delivery": "failed"},
         },
     )
     client.post(
@@ -241,7 +241,7 @@ def test_git_sync_summary_endpoint():
             "status": "skipped",
             "source": "git_auto_sync.ps1",
             "environment": "dev",
-            "context": {"status": "skipped", "branch": "release/2026w16", "push_attempts": 0},
+            "context": {"status": "skipped", "branch": "release/2026w16", "push_attempts": 0, "audit_delivery": "failed"},
         },
     )
     r = client.get("/api/v1/ops/git-sync/summary", params={"days": 7, "environment": "dev"})
@@ -273,6 +273,10 @@ def test_git_sync_summary_endpoint():
     assert "avg_push_attempts" in body
     assert "max_push_attempts" in body
     assert "push_attempt_sample_count" in body
+    assert "audit_delivery_success_count" in body
+    assert "audit_delivery_failed_count" in body
+    assert "audit_delivery_success_rate" in body
+    assert "audit_delivery_failure_rate" in body
     assert body["granularity"] == "day"
     assert body["bucket_label_format"] == "raw"
     assert isinstance(body["timeline"], list)
@@ -297,6 +301,10 @@ def test_git_sync_summary_endpoint():
     assert isinstance(body["avg_push_attempts"], float)
     assert isinstance(body["max_push_attempts"], int)
     assert isinstance(body["push_attempt_sample_count"], int)
+    assert isinstance(body["audit_delivery_success_count"], int)
+    assert isinstance(body["audit_delivery_failed_count"], int)
+    assert isinstance(body["audit_delivery_success_rate"], float)
+    assert isinstance(body["audit_delivery_failure_rate"], float)
     assert len(body["top_branches"]) >= 1
     assert "branch" in body["top_branches"][0]
     assert len(body["top_source_branches"]) >= 1

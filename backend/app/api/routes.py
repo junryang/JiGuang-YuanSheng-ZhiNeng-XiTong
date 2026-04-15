@@ -1374,6 +1374,8 @@ def git_sync_summary(
     push_attempt_samples = 0
     push_attempt_sum = 0
     push_attempt_max = 0
+    audit_delivery_success_count = 0
+    audit_delivery_failed_count = 0
     last_success_at: datetime | None = None
     last_failure_at: datetime | None = None
     last_skipped_at: datetime | None = None
@@ -1407,6 +1409,11 @@ def git_sync_summary(
             push_attempt_sum += push_attempts
             if push_attempts > push_attempt_max:
                 push_attempt_max = push_attempts
+        audit_delivery = str(context.get("audit_delivery", "")).strip().lower()
+        if audit_delivery == "success":
+            audit_delivery_success_count += 1
+        elif audit_delivery == "failed":
+            audit_delivery_failed_count += 1
         if last_event_at is None or ts > last_event_at:
             last_event_at = ts
         if status == "success" and (last_success_at is None or ts > last_success_at):
@@ -1481,6 +1488,12 @@ def git_sync_summary(
     success_rate = round((totals["success"] / totals["total"]) * 100, 1) if totals["total"] > 0 else 0.0
     failure_rate = round((totals["failure"] / totals["total"]) * 100, 1) if totals["total"] > 0 else 0.0
     avg_push_attempts = round(push_attempt_sum / push_attempt_samples, 2) if push_attempt_samples > 0 else 0.0
+    audit_delivery_success_rate = (
+        round((audit_delivery_success_count / totals["total"]) * 100, 1) if totals["total"] > 0 else 0.0
+    )
+    audit_delivery_failure_rate = (
+        round((audit_delivery_failed_count / totals["total"]) * 100, 1) if totals["total"] > 0 else 0.0
+    )
     top_branches = sorted(
         [{"branch": b, **stats} for b, stats in branch_totals.items()],
         key=lambda x: (-x["total"], x["branch"]),
@@ -1566,6 +1579,10 @@ def git_sync_summary(
         "avg_push_attempts": avg_push_attempts,
         "max_push_attempts": push_attempt_max,
         "push_attempt_sample_count": push_attempt_samples,
+        "audit_delivery_success_count": audit_delivery_success_count,
+        "audit_delivery_failed_count": audit_delivery_failed_count,
+        "audit_delivery_success_rate": audit_delivery_success_rate,
+        "audit_delivery_failure_rate": audit_delivery_failure_rate,
         "timeline": timeline_with_label,
     }
 
