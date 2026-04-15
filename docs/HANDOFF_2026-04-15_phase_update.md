@@ -546,3 +546,15 @@
       - 口径：在现有过滤条件窗口内，基于 `context.audit_delivery=success|failed` 统计最近事件时间与距今分钟数。
       - 目标：支撑“审计旁路是否长时间失败/沉默”的时效观测，缩短故障定位路径。
       - 补充最小回归断言，校验字段存在且类型正确（`str`/`float`），保持接口兼容增强。
+
+65. 运营风险报告补充审计投递最近时钟字段（完成后增强）
+    - 文件：`backend/app/api/routes.py`、`backend/tests/test_api_smoke.py`
+    - 变更：
+      - `GET /api/v1/analytics/reports?report_type=ops_risk` 新增：
+        - `last_git_sync_audit_delivery_success_at`
+        - `minutes_since_last_git_sync_audit_delivery_success`
+        - `last_git_sync_audit_delivery_failed_at`
+        - `minutes_since_last_git_sync_audit_delivery_failed`
+      - 口径：在报告窗口内基于 `git_sync_status.context.audit_delivery=success|failed` 统计最近一次事件时钟。
+      - 目标：让 `ops_risk` 报告直接观测“审计投递成功/失败最近发生时间”，提升旁路异常定位效率。
+      - 补充最小回归断言，校验新增字段存在且类型正确（`str`/`float`），保持兼容增强。

@@ -510,6 +510,10 @@ def test_analytics_reports_project_execution_and_ops_risk():
     assert "git_sync_avg_push_attempts" in opsb
     assert "git_sync_max_push_attempts" in opsb
     assert "git_sync_push_attempt_sample_count" in opsb
+    assert "last_git_sync_audit_delivery_success_at" in opsb
+    assert "minutes_since_last_git_sync_audit_delivery_success" in opsb
+    assert "last_git_sync_audit_delivery_failed_at" in opsb
+    assert "minutes_since_last_git_sync_audit_delivery_failed" in opsb
     assert "git_sync_consecutive_failure_streak" in opsb
     assert "git_sync_consecutive_non_success_streak" in opsb
     assert "git_sync_health_level" in opsb
@@ -540,6 +544,10 @@ def test_analytics_reports_project_execution_and_ops_risk():
     assert isinstance(opsb["git_sync_avg_push_attempts"], float)
     assert isinstance(opsb["git_sync_max_push_attempts"], int)
     assert isinstance(opsb["git_sync_push_attempt_sample_count"], int)
+    assert isinstance(opsb["last_git_sync_audit_delivery_success_at"], str)
+    assert isinstance(opsb["minutes_since_last_git_sync_audit_delivery_success"], float)
+    assert isinstance(opsb["last_git_sync_audit_delivery_failed_at"], str)
+    assert isinstance(opsb["minutes_since_last_git_sync_audit_delivery_failed"], float)
     assert isinstance(opsb["git_sync_consecutive_failure_streak"], int)
     assert isinstance(opsb["git_sync_consecutive_non_success_streak"], int)
     assert opsb["git_sync_health_level"] in {"healthy", "warning", "high_risk"}

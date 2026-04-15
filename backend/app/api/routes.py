@@ -1712,6 +1712,20 @@ def analytics_reports(
         if push_attempts > push_attempt_max:
             push_attempt_max = push_attempts
     git_sync_avg_push_attempts = round(push_attempt_sum / push_attempt_sample_count, 2) if push_attempt_sample_count > 0 else 0.0
+    last_git_sync_audit_delivery_success_at = None
+    last_git_sync_audit_delivery_failed_at = None
+    for e in git_events:
+        ts = _parse_utc_iso(e.get("timestamp"))
+        if ts is None:
+            continue
+        context = e.get("context") or {}
+        audit_delivery = str(context.get("audit_delivery", "")).strip().lower()
+        if audit_delivery == "success":
+            if last_git_sync_audit_delivery_success_at is None or ts > last_git_sync_audit_delivery_success_at:
+                last_git_sync_audit_delivery_success_at = ts
+        elif audit_delivery == "failed":
+            if last_git_sync_audit_delivery_failed_at is None or ts > last_git_sync_audit_delivery_failed_at:
+                last_git_sync_audit_delivery_failed_at = ts
     git_success_rate = round((git_success / git_total) * 100, 1) if git_total > 0 else 0.0
     git_failure_rate = round((git_failure / git_total) * 100, 1) if git_total > 0 else 0.0
     git_skipped_rate = round((git_skipped / git_total) * 100, 1) if git_total > 0 else 0.0
@@ -1792,6 +1806,14 @@ def analytics_reports(
         "git_sync_avg_push_attempts": git_sync_avg_push_attempts,
         "git_sync_max_push_attempts": push_attempt_max,
         "git_sync_push_attempt_sample_count": push_attempt_sample_count,
+        "last_git_sync_audit_delivery_success_at": (
+            last_git_sync_audit_delivery_success_at.isoformat() if last_git_sync_audit_delivery_success_at else None
+        ),
+        "minutes_since_last_git_sync_audit_delivery_success": _minutes_since(last_git_sync_audit_delivery_success_at, now),
+        "last_git_sync_audit_delivery_failed_at": (
+            last_git_sync_audit_delivery_failed_at.isoformat() if last_git_sync_audit_delivery_failed_at else None
+        ),
+        "minutes_since_last_git_sync_audit_delivery_failed": _minutes_since(last_git_sync_audit_delivery_failed_at, now),
         "git_sync_consecutive_failure_streak": consecutive_failure_streak,
         "git_sync_consecutive_non_success_streak": consecutive_non_success_streak,
         "git_sync_health_level": git_sync_health_level,
