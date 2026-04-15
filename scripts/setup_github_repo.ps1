@@ -2,7 +2,7 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$Owner,
 
-    [string]$Repo = "纪光元生智能系统",
+    [string]$Repo = "JiGuang-YuanSheng-ZhiNeng-XiTong",
 
     [string]$DefaultBranch = "main",
     [switch]$Private,
@@ -12,7 +12,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 if (-not $env:GITHUB_TOKEN) {
-    throw "请先设置环境变量 GITHUB_TOKEN（需具备 repo 权限）。"
+    throw "Please set GITHUB_TOKEN first (repo scope required)."
 }
 
 $headers = @{
@@ -28,7 +28,7 @@ $repoBody = @{
     auto_init = $false
 } | ConvertTo-Json
 
-Write-Host ">> 检查仓库是否存在: $Owner/$Repo"
+Write-Host ">> Check repository: $Owner/$Repo"
 $repoExists = $false
 try {
     Invoke-RestMethod -Method Get -Uri "https://api.github.com/repos/$Owner/$Repo" -Headers $headers | Out-Null
@@ -38,15 +38,15 @@ try {
 }
 
 if (-not $repoExists) {
-    Write-Host ">> 创建仓库: $Owner/$Repo"
+    Write-Host ">> Create repository: $Owner/$Repo"
     Invoke-RestMethod -Method Post -Uri "https://api.github.com/user/repos" -Headers $headers -Body $repoBody -ContentType "application/json" | Out-Null
 }
 
 $remoteUrl = "https://github.com/$Owner/$Repo.git"
-Write-Host ">> 配置本地 git remote"
+Write-Host ">> Configure local git remote"
 git rev-parse --is-inside-work-tree | Out-Null
 if ($LASTEXITCODE -ne 0) {
-    throw "当前目录不是 git 仓库，请先执行 git init。"
+    throw "Current directory is not a git repository. Run git init first."
 }
 
 $existingRemote = git remote get-url origin 2>$null
@@ -56,7 +56,7 @@ if ($LASTEXITCODE -eq 0 -and $existingRemote) {
     git remote add origin $remoteUrl
 }
 
-Write-Host ">> 推送到远程并设置默认分支"
+Write-Host ">> Push to remote and set default branch"
 git branch -M $DefaultBranch
 if (-not $SkipPush.IsPresent) {
     $hasCommit = $true
@@ -66,15 +66,15 @@ if (-not $SkipPush.IsPresent) {
         $hasCommit = $false
     }
     if (-not $hasCommit) {
-        Write-Host ">> 检测到暂无提交，自动创建初始提交"
+        Write-Host ">> No commit found, create initial commit"
         git add -A
         git commit -m "chore: initialize repository for GitHub sync"
     }
     git push -u origin $DefaultBranch
 }
 
-Write-Host ">> 设置仓库默认分支: $DefaultBranch"
+Write-Host ">> Set default branch: $DefaultBranch"
 $patchBody = @{ default_branch = $DefaultBranch } | ConvertTo-Json
 Invoke-RestMethod -Method Patch -Uri "https://api.github.com/repos/$Owner/$Repo" -Headers $headers -Body $patchBody -ContentType "application/json" | Out-Null
 
-Write-Host "完成: https://github.com/$Owner/$Repo"
+Write-Host "Done: https://github.com/$Owner/$Repo"

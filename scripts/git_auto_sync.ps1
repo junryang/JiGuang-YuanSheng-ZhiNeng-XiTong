@@ -10,7 +10,7 @@ function Invoke-AutoSync {
     try {
         & "$PSScriptRoot\git_sync_once.ps1" -Branch $Branch
     } catch {
-        Write-Host "[WARN] 自动同步失败: $($_.Exception.Message)"
+        Write-Host "[WARN] Auto sync failed: $($_.Exception.Message)"
     }
 }
 
@@ -19,7 +19,7 @@ if ($RunOnce.IsPresent) {
     exit 0
 }
 
-Write-Host "自动同步已启动。分支=$Branch，周期=${IntervalSeconds}s"
+Write-Host "Auto sync started. branch=$Branch interval=${IntervalSeconds}s"
 while ($true) {
     Invoke-AutoSync
     Start-Sleep -Seconds $IntervalSeconds
