@@ -277,6 +277,10 @@ def test_git_sync_summary_endpoint():
     assert "audit_delivery_failed_count" in body
     assert "audit_delivery_success_rate" in body
     assert "audit_delivery_failure_rate" in body
+    assert "last_audit_delivery_success_at" in body
+    assert "last_audit_delivery_failed_at" in body
+    assert "minutes_since_last_audit_delivery_success" in body
+    assert "minutes_since_last_audit_delivery_failed" in body
     assert body["granularity"] == "day"
     assert body["bucket_label_format"] == "raw"
     assert isinstance(body["timeline"], list)
@@ -305,6 +309,10 @@ def test_git_sync_summary_endpoint():
     assert isinstance(body["audit_delivery_failed_count"], int)
     assert isinstance(body["audit_delivery_success_rate"], float)
     assert isinstance(body["audit_delivery_failure_rate"], float)
+    assert isinstance(body["last_audit_delivery_success_at"], str)
+    assert isinstance(body["last_audit_delivery_failed_at"], str)
+    assert isinstance(body["minutes_since_last_audit_delivery_success"], float)
+    assert isinstance(body["minutes_since_last_audit_delivery_failed"], float)
     assert len(body["top_branches"]) >= 1
     assert "branch" in body["top_branches"][0]
     assert len(body["top_source_branches"]) >= 1

@@ -1376,6 +1376,8 @@ def git_sync_summary(
     push_attempt_max = 0
     audit_delivery_success_count = 0
     audit_delivery_failed_count = 0
+    last_audit_delivery_success_at: datetime | None = None
+    last_audit_delivery_failed_at: datetime | None = None
     last_success_at: datetime | None = None
     last_failure_at: datetime | None = None
     last_skipped_at: datetime | None = None
@@ -1412,8 +1414,12 @@ def git_sync_summary(
         audit_delivery = str(context.get("audit_delivery", "")).strip().lower()
         if audit_delivery == "success":
             audit_delivery_success_count += 1
+            if last_audit_delivery_success_at is None or ts > last_audit_delivery_success_at:
+                last_audit_delivery_success_at = ts
         elif audit_delivery == "failed":
             audit_delivery_failed_count += 1
+            if last_audit_delivery_failed_at is None or ts > last_audit_delivery_failed_at:
+                last_audit_delivery_failed_at = ts
         if last_event_at is None or ts > last_event_at:
             last_event_at = ts
         if status == "success" and (last_success_at is None or ts > last_success_at):
@@ -1583,6 +1589,14 @@ def git_sync_summary(
         "audit_delivery_failed_count": audit_delivery_failed_count,
         "audit_delivery_success_rate": audit_delivery_success_rate,
         "audit_delivery_failure_rate": audit_delivery_failure_rate,
+        "last_audit_delivery_success_at": (
+            last_audit_delivery_success_at.isoformat() if last_audit_delivery_success_at else None
+        ),
+        "last_audit_delivery_failed_at": (
+            last_audit_delivery_failed_at.isoformat() if last_audit_delivery_failed_at else None
+        ),
+        "minutes_since_last_audit_delivery_success": _minutes_since(last_audit_delivery_success_at, now_hour),
+        "minutes_since_last_audit_delivery_failed": _minutes_since(last_audit_delivery_failed_at, now_hour),
         "timeline": timeline_with_label,
     }
 
