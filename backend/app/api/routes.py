@@ -1500,6 +1500,12 @@ def git_sync_summary(
     audit_delivery_failure_rate = (
         round((audit_delivery_failed_count / totals["total"]) * 100, 1) if totals["total"] > 0 else 0.0
     )
+    if audit_delivery_failed_count >= 3 or (totals["total"] > 0 and audit_delivery_success_count == 0):
+        audit_delivery_health_level = "high_risk"
+    elif audit_delivery_failed_count >= 1:
+        audit_delivery_health_level = "warning"
+    else:
+        audit_delivery_health_level = "healthy"
     top_branches = sorted(
         [{"branch": b, **stats} for b, stats in branch_totals.items()],
         key=lambda x: (-x["total"], x["branch"]),
@@ -1589,6 +1595,8 @@ def git_sync_summary(
         "audit_delivery_failed_count": audit_delivery_failed_count,
         "audit_delivery_success_rate": audit_delivery_success_rate,
         "audit_delivery_failure_rate": audit_delivery_failure_rate,
+        "audit_delivery_health_level": audit_delivery_health_level,
+        "audit_delivery_health_warning": audit_delivery_health_level != "healthy",
         "last_audit_delivery_success_at": (
             last_audit_delivery_success_at.isoformat() if last_audit_delivery_success_at else None
         ),
@@ -1731,6 +1739,12 @@ def analytics_reports(
     git_skipped_rate = round((git_skipped / git_total) * 100, 1) if git_total > 0 else 0.0
     git_audit_delivery_failure_rate = round((git_audit_delivery_failed / git_total) * 100, 1) if git_total > 0 else 0.0
     git_audit_delivery_success_rate = round((git_audit_delivery_success / git_total) * 100, 1) if git_total > 0 else 0.0
+    if git_audit_delivery_failed >= 3 or (git_total > 0 and git_audit_delivery_success == 0):
+        git_sync_audit_delivery_health_level = "high_risk"
+    elif git_audit_delivery_failed >= 1:
+        git_sync_audit_delivery_health_level = "warning"
+    else:
+        git_sync_audit_delivery_health_level = "healthy"
     git_net_success_rate = round(((git_success - git_failure) / git_total) * 100, 1) if git_total > 0 else 0.0
     git_event_density_per_day = round(git_total / max(1, int(days)), 2)
     git_success_density_per_day = round(git_success / max(1, int(days)), 2)
@@ -1793,6 +1807,8 @@ def analytics_reports(
         "git_sync_audit_delivery_success_count": git_audit_delivery_success,
         "git_sync_audit_delivery_failure_rate": git_audit_delivery_failure_rate,
         "git_sync_audit_delivery_success_rate": git_audit_delivery_success_rate,
+        "git_sync_audit_delivery_health_level": git_sync_audit_delivery_health_level,
+        "git_sync_audit_delivery_health_warning": git_sync_audit_delivery_health_level != "healthy",
         "git_sync_net_success_rate": git_net_success_rate,
         "git_sync_failure_pressure_index": git_sync_failure_pressure_index,
         "git_sync_event_density_per_day": git_event_density_per_day,

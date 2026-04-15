@@ -277,6 +277,8 @@ def test_git_sync_summary_endpoint():
     assert "audit_delivery_failed_count" in body
     assert "audit_delivery_success_rate" in body
     assert "audit_delivery_failure_rate" in body
+    assert "audit_delivery_health_level" in body
+    assert "audit_delivery_health_warning" in body
     assert "last_audit_delivery_success_at" in body
     assert "last_audit_delivery_failed_at" in body
     assert "minutes_since_last_audit_delivery_success" in body
@@ -309,6 +311,8 @@ def test_git_sync_summary_endpoint():
     assert isinstance(body["audit_delivery_failed_count"], int)
     assert isinstance(body["audit_delivery_success_rate"], float)
     assert isinstance(body["audit_delivery_failure_rate"], float)
+    assert body["audit_delivery_health_level"] in {"healthy", "warning", "high_risk"}
+    assert isinstance(body["audit_delivery_health_warning"], bool)
     assert isinstance(body["last_audit_delivery_success_at"], str)
     assert isinstance(body["last_audit_delivery_failed_at"], str)
     assert isinstance(body["minutes_since_last_audit_delivery_success"], float)
@@ -497,6 +501,8 @@ def test_analytics_reports_project_execution_and_ops_risk():
     assert "git_sync_audit_delivery_success_count" in opsb
     assert "git_sync_audit_delivery_failure_rate" in opsb
     assert "git_sync_audit_delivery_success_rate" in opsb
+    assert "git_sync_audit_delivery_health_level" in opsb
+    assert "git_sync_audit_delivery_health_warning" in opsb
     assert "git_sync_net_success_rate" in opsb
     assert "git_sync_failure_pressure_index" in opsb
     assert "git_sync_event_density_per_day" in opsb
@@ -531,6 +537,8 @@ def test_analytics_reports_project_execution_and_ops_risk():
     assert isinstance(opsb["git_sync_audit_delivery_success_count"], int)
     assert isinstance(opsb["git_sync_audit_delivery_failure_rate"], float)
     assert isinstance(opsb["git_sync_audit_delivery_success_rate"], float)
+    assert opsb["git_sync_audit_delivery_health_level"] in {"healthy", "warning", "high_risk"}
+    assert isinstance(opsb["git_sync_audit_delivery_health_warning"], bool)
     assert isinstance(opsb["git_sync_net_success_rate"], float)
     assert isinstance(opsb["git_sync_failure_pressure_index"], float)
     assert isinstance(opsb["git_sync_event_density_per_day"], float)

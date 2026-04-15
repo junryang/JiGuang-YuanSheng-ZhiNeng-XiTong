@@ -558,3 +558,15 @@
       - 口径：在报告窗口内基于 `git_sync_status.context.audit_delivery=success|failed` 统计最近一次事件时钟。
       - 目标：让 `ops_risk` 报告直接观测“审计投递成功/失败最近发生时间”，提升旁路异常定位效率。
       - 补充最小回归断言，校验新增字段存在且类型正确（`str`/`float`），保持兼容增强。
+
+66. Git 摘要与运营风险报告补充审计投递健康等级（完成后增强）
+    - 文件：`backend/app/api/routes.py`、`backend/tests/test_api_smoke.py`
+    - 变更：
+      - `GET /api/v1/ops/git-sync/summary` 新增：
+        - `audit_delivery_health_level`（`healthy|warning|high_risk`）
+        - `audit_delivery_health_warning`（布尔值）
+      - `GET /api/v1/analytics/reports?report_type=ops_risk` 新增：
+        - `git_sync_audit_delivery_health_level`（`healthy|warning|high_risk`）
+        - `git_sync_audit_delivery_health_warning`（布尔值）
+      - 判定口径：优先基于审计投递失败计数与“仅失败无成功”场景进行风险分级，保持现有字段兼容并增强可观测判读效率。
+      - 补充最小回归断言，校验字段存在、枚举合法和类型正确。
