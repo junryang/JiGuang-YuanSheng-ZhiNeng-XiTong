@@ -1,0 +1,207 @@
+version: "v1.0"
+description: "Day3 策略门禁矩阵场景清单（机器可读）"
+
+publish_cases:
+  - name: "staging_missing_law_bundle_rejected"
+    runtime_mode: "normal"
+    environment: "staging"
+    law_ref: "MISSING_LAW"
+    approved: true
+    expected_status: 403
+    expected_error_code: "LAW_BUNDLE_REQUIRED"
+  - name: "prod_requires_approval"
+    runtime_mode: "normal"
+    environment: "prod"
+    law_ref: "FULL_LAW"
+    approved: false
+    expected_status: 403
+    expected_error_code: "PROD_APPROVAL_REQUIRED"
+  - name: "prod_normal_full_law_approved"
+    runtime_mode: "normal"
+    environment: "prod"
+    law_ref: "FULL_LAW"
+    approved: true
+    expected_status: 200
+    expected_error_code: null
+  - name: "prod_degraded_blocks_high_risk"
+    runtime_mode: "degraded"
+    environment: "prod"
+    law_ref: "FULL_LAW"
+    approved: true
+    expected_status: 403
+    expected_error_code: "DEGRADED_HIGH_RISK_FORBIDDEN"
+
+policy_eval_cases:
+  - name: "p13_dev_missing_law_rejected"
+    policy_id: "CEO-POLICY-13"
+    environment: "dev"
+    context:
+      law_ref: "EMPTY_LAW"
+      high_risk_action: true
+    expected_status: 403
+    allowed_error_codes: ["LAW_BUNDLE_REQUIRED", "LAW_04_REQUIRED"]
+  - name: "p13_staging_requires_law_bundle"
+    policy_id: "CEO-POLICY-13"
+    environment: "staging"
+    context:
+      law_ref: "MISSING_LAW"
+      high_risk_action: true
+    expected_status: 403
+    allowed_error_codes: ["LAW_BUNDLE_REQUIRED", "LAW_04_REQUIRED"]
+  - name: "p13_prod_allows_full_law"
+    policy_id: "CEO-POLICY-13"
+    environment: "prod"
+    context:
+      law_ref: "FULL_LAW"
+      high_risk_action: true
+    expected_status: 200
+    allowed_error_codes: []
+  - name: "p14_prod_degraded_blocks_high_risk"
+    policy_id: "CEO-POLICY-14"
+    environment: "prod"
+    context:
+      law_ref: "FULL_LAW"
+      degraded_mode: true
+      high_risk_action: true
+    expected_status: 403
+    allowed_error_codes: ["DEGRADED_HIGH_RISK_FORBIDDEN", "DEGRADED_MODE_BLOCK"]
+  - name: "p14_prod_normal_allows_high_risk"
+    policy_id: "CEO-POLICY-14"
+    environment: "prod"
+    context:
+      law_ref: "FULL_LAW"
+      degraded_mode: false
+      high_risk_action: true
+    expected_status: 200
+    allowed_error_codes: []
+  - name: "p14_staging_degraded_blocks_high_risk"
+    policy_id: "CEO-POLICY-14"
+    environment: "staging"
+    context:
+      law_ref: "FULL_LAW"
+      degraded_mode: true
+      high_risk_action: true
+    expected_status: 403
+    allowed_error_codes: ["DEGRADED_HIGH_RISK_FORBIDDEN", "DEGRADED_MODE_BLOCK"]
+
+orchestration_cases:
+  - name: "orch_dev_full_law_baseline_ok"
+    environment: "dev"
+    law_ref: "FULL_LAW"
+    use_optional_tools: false
+    approved: false
+    expected_statuses: [200]
+    allowed_error_codes: []
+  - name: "orch_staging_optional_needs_approval"
+    environment: "staging"
+    law_ref: "FULL_LAW"
+    use_optional_tools: true
+    approved: false
+    expected_statuses: [403]
+    allowed_error_codes: ["OPTIONAL_TOOLS_APPROVAL_REQUIRED"]
+  - name: "orch_staging_optional_with_approval_ok"
+    environment: "staging"
+    law_ref: "FULL_LAW"
+    use_optional_tools: true
+    approved: true
+    expected_statuses: [200]
+    allowed_error_codes: []
+  - name: "orch_prod_optional_needs_approval"
+    environment: "prod"
+    law_ref: "FULL_LAW"
+    use_optional_tools: true
+    approved: false
+    expected_statuses: [403]
+    allowed_error_codes: ["OPTIONAL_TOOLS_APPROVAL_REQUIRED"]
+  - name: "orch_prod_optional_with_approval_ok"
+    environment: "prod"
+    law_ref: "FULL_LAW"
+    use_optional_tools: true
+    approved: true
+    expected_statuses: [200]
+    allowed_error_codes: []
+  - name: "orch_staging_missing_law_rejected"
+    environment: "staging"
+    law_ref: "MISSING_LAW"
+    use_optional_tools: false
+    approved: false
+    expected_statuses: [400, 403]
+    allowed_error_codes: ["STRICT_LAW_BUNDLE", "LAW_BUNDLE_REQUIRED", "LAW_04_REQUIRED"]
+  - name: "orch_dev_missing_law_rejected"
+    environment: "dev"
+    law_ref: "EMPTY_LAW"
+    use_optional_tools: false
+    approved: false
+    expected_statuses: [403]
+    allowed_error_codes: ["LAW_BUNDLE_REQUIRED", "LAW_04_REQUIRED"]
+
+approval_cases:
+  - case: "submit_draft_ok"
+    expected_status: 200
+    expected_project_status: "pending_approval"
+  - case: "resubmit_pending_rejected"
+    expected_status: 400
+    expected_project_status: null
+  - case: "approve_wrong_level_rejected"
+    expected_status: 400
+    expected_project_status: null
+  - case: "approve_single_step_ok"
+    expected_status: 200
+    expected_project_status: "approved"
+  - case: "reject_wrong_level_rejected"
+    expected_status: 400
+    expected_project_status: null
+  - case: "reject_current_level_ok"
+    expected_status: 200
+    expected_project_status: "rejected"
+
+audit_consistency_cases:
+  - params:
+      event_type_prefix: "delegation"
+    expect_nonempty: true
+  - params:
+      policy_id: "collaboration"
+      environment: "dev"
+    expect_nonempty: true
+  - params:
+      reason_code_prefix: "LAW_"
+    expect_nonempty: true
+  - params:
+      event_type_prefix: "no_such_prefix_xyz"
+    expect_nonempty: false
+
+security_sampling_cases:
+  - name: "publish_staging_unapproved_rejected"
+    kind: "publish"
+    environment: "staging"
+    runtime_mode: "normal"
+    law_ref: "FULL_LAW"
+    approved: false
+    expected_status: 403
+    allowed_error_codes: ["STAGING_APPROVAL_REQUIRED"]
+  - name: "publish_prod_unapproved_rejected"
+    kind: "publish"
+    environment: "prod"
+    runtime_mode: "normal"
+    law_ref: "FULL_LAW"
+    approved: false
+    expected_status: 403
+    allowed_error_codes: ["PROD_APPROVAL_REQUIRED"]
+  - name: "orchestration_staging_optional_unapproved_rejected"
+    kind: "orchestration"
+    environment: "staging"
+    runtime_mode: "normal"
+    law_ref: "FULL_LAW"
+    approved: false
+    use_optional_tools: true
+    expected_status: 403
+    allowed_error_codes: ["OPTIONAL_TOOLS_APPROVAL_REQUIRED"]
+  - name: "orchestration_prod_optional_unapproved_rejected"
+    kind: "orchestration"
+    environment: "prod"
+    runtime_mode: "normal"
+    law_ref: "FULL_LAW"
+    approved: false
+    use_optional_tools: true
+    expected_status: 403
+    allowed_error_codes: ["OPTIONAL_TOOLS_APPROVAL_REQUIRED"]

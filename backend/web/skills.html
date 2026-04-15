@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>技能库 · 纪光元生</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --panel: #1a2332;
+      --text: #e6edf3;
+      --muted: #8b9cb3;
+      --accent: #3d8bfd;
+      --border: #30363d;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); }
+    header {
+      padding: 0.85rem 1.25rem; border-bottom: 1px solid var(--border);
+      display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; justify-content: space-between;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    main { max-width: 1000px; margin: 0 auto; padding: 1rem; }
+    section {
+      background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 1rem;
+    }
+    h1 { margin: 0; font-size: 1.1rem; }
+    h2 { margin: 0 0 0.6rem; font-size: 0.85rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    .meta { font-size: 0.8rem; color: var(--muted); }
+    .row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+    .pill { font-size: 0.75rem; padding: 0.15rem 0.45rem; border-radius: 999px; background: #21262d; color: var(--muted); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    th, td { border: 1px solid var(--border); padding: 0.35rem 0.5rem; text-align: left; vertical-align: top; }
+    th { background: #0d1117; color: var(--muted); }
+    input[type="text"], textarea, select {
+      width: 100%; max-width: 420px; background: #0d1117; border: 1px solid var(--border); color: var(--text);
+      border-radius: 6px; padding: 0.45rem 0.5rem; margin-bottom: 0.5rem;
+      font-family: inherit;
+    }
+    textarea { min-height: 72px; max-width: 100%; resize: vertical; }
+    select { max-width: 220px; }
+    button {
+      background: var(--accent); color: #fff; border: none; padding: 0.4rem 0.75rem;
+      border-radius: 6px; cursor: pointer; font-size: 0.85rem;
+    }
+    button.secondary { background: #30363d; }
+    button.danger { background: #da3633; }
+    .mono { font-family: ui-monospace, monospace; font-size: 0.78rem; }
+    .err { color: #f85149; }
+    tbody tr { cursor: pointer; }
+    tbody tr:hover { background: #21262d; }
+    tbody tr.sel { outline: 1px solid var(--accent); outline-offset: -1px; }
+    pre#skillDetail {
+      max-height: 220px; overflow: auto; padding: 0.5rem; background: #0d1117; border-radius: 6px;
+      border: 1px solid var(--border); margin-top: 0.35rem; font-size: 0.78rem;
+    }
+    .sid { color: #58a6ff; text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <div class="row meta" style="font-size:0.82rem;flex-wrap:wrap;gap:0.35rem;align-items:center">
+        <a href="/ui/">← 工作台</a>
+        · <a href="/ui/agents.html">智能体</a>
+        · <a href="/ui/collab.html">协作委托</a>
+        · <a href="/ui/marketing.html">营销中心</a>
+        · <a href="/ui/memory.html">工作记忆</a>
+        · <a href="/ui/tasks.html">任务看板</a>
+        · <a href="/ui/chat.html">对话会话</a>
+      </div>
+      <h1 style="margin-top:0.35rem">技能库 <span class="pill">PH3-T02</span></h1>
+    </div>
+    <div class="meta mono" style="text-align:right;max-width:22rem">
+      <div id="userBar">—</div>
+      <div style="margin-top:0.35rem">GET /api/v1/skills</div>
+    </div>
+  </header>
+  <main>
+    <section>
+      <h2>新建技能</h2>
+      <p class="meta">调用 <code>POST /api/v1/skills</code>；分类须为 common / backend / frontend / agent / testing / marketing 之一。</p>
+      <input type="text" id="skName" placeholder="技能名称 *" />
+      <div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center">
+        <select id="skCat">
+          <option value="common">common</option>
+          <option value="backend">backend</option>
+          <option value="frontend">frontend</option>
+          <option value="agent">agent</option>
+          <option value="testing">testing</option>
+          <option value="marketing">marketing</option>
+        </select>
+        <select id="skLvl">
+          <option value="senior">senior</option>
+          <option value="middle" selected>middle</option>
+          <option value="junior">junior</option>
+        </select>
+      </div>
+      <textarea id="skDesc" placeholder="说明（可选）"></textarea>
+      <button type="button" id="btnCreate">创建</button>
+    </section>
+    <section>
+      <h2>列表</h2>
+      <p class="meta">支持 <code>category</code> 与名称关键字 <code>q</code>（不区分大小写，匹配名称子串）。点击行加载 <code>GET /api/v1/skills/{id}</code>；下方可 <code>PUT</code> 保存名称、说明、分类与等级，或 <code>DELETE /api/v1/skills/{id}</code> 删除（需确认）。</p>
+      <div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center;margin-bottom:0.5rem">
+        <input type="text" id="qCat" placeholder="分类 category，如 marketing" style="min-width:12rem;flex:1;max-width:16rem" />
+        <input type="text" id="qSkill" placeholder="名称关键字 q" style="min-width:10rem;flex:1;max-width:14rem" />
+        <button type="button" id="btnLoad">刷新</button>
+      </div>
+      <div style="overflow:auto">
+        <table>
+          <thead><tr><th>ID</th><th>名称</th><th>分类</th><th>等级</th><th>说明</th></tr></thead>
+          <tbody id="skillBody"></tbody>
+        </table>
+      </div>
+      <h3 style="margin:0.85rem 0 0.35rem;font-size:0.9rem;color:var(--muted);font-weight:600">详情 JSON</h3>
+      <pre id="skillDetail" class="mono">—</pre>
+      <h3 style="margin:0.85rem 0 0.35rem;font-size:0.9rem;color:var(--muted);font-weight:600">编辑并保存</h3>
+      <p class="meta">先选中列表中的一条技能。</p>
+      <input type="text" id="edName" placeholder="名称" disabled style="max-width:100%" />
+      <div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:0.35rem">
+        <select id="edCat" disabled>
+          <option value="common">common</option>
+          <option value="backend">backend</option>
+          <option value="frontend">frontend</option>
+          <option value="agent">agent</option>
+          <option value="testing">testing</option>
+          <option value="marketing">marketing</option>
+        </select>
+        <select id="edLvl" disabled>
+          <option value="senior">senior</option>
+          <option value="middle">middle</option>
+          <option value="junior">junior</option>
+        </select>
+      </div>
+      <textarea id="edDesc" placeholder="说明" disabled style="margin-top:0.5rem"></textarea>
+      <div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:0.5rem;align-items:center">
+        <button type="button" class="secondary" id="btnSaveSkill" disabled>PUT 保存</button>
+        <button type="button" class="danger" id="btnDeleteSkill" disabled>DELETE 删除</button>
+      </div>
+      <p class="meta" id="skillSaveMsg" style="margin-top:0.35rem"></p>
+    </section>
+  </main>
+  <script src="api-client.js"></script>
+  <script>
+    const API = "/api/v1";
+    let selectedSkillId = null;
+
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    async function loadSkills() {
+      const cat = document.getElementById("qCat").value.trim();
+      const qkw = document.getElementById("qSkill").value.trim();
+      let url = API + "/skills?limit=200";
+      if (cat) url += "&category=" + encodeURIComponent(cat);
+      if (qkw) url += "&q=" + encodeURIComponent(qkw);
+      const tb = document.getElementById("skillBody");
+      tb.innerHTML = "";
+      try {
+        const r = await jyisApiFetch(url);
+        if (!r.ok) throw new Error(r.status + " " + (await r.text()));
+        const data = await r.json();
+        (data.items || []).forEach(s => {
+          const tr = document.createElement("tr");
+          tr.dataset.skillId = s.id;
+          if (selectedSkillId === s.id) tr.classList.add("sel");
+          const desc = String(s.description || "").slice(0, 200);
+          tr.innerHTML =
+            "<td class=\"mono sid\">" +
+            escapeHtml(s.id || "") +
+            "</td><td style=\"font-weight:600\">" +
+            escapeHtml(s.name || "") +
+            "</td><td>" +
+            escapeHtml(s.category) +
+            "</td><td>" +
+            escapeHtml(s.level) +
+            "</td><td>" +
+            escapeHtml(desc) +
+            "</td>";
+          tb.appendChild(tr);
+        });
+        if (!(data.items || []).length) {
+          tb.innerHTML = "<tr><td colspan=\"5\" class=\"meta\">无记录</td></tr>";
+        }
+      } catch (e) {
+        tb.innerHTML = "<tr><td colspan=\"5\" class=\"err\">" + escapeHtml(String(e)) + "</td></tr>";
+      }
+    }
+
+    function setEditEnabled(on) {
+      ["edName", "edCat", "edLvl", "edDesc", "btnSaveSkill", "btnDeleteSkill"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.disabled = !on;
+      });
+    }
+
+    async function selectSkill(id) {
+      selectedSkillId = id;
+      document.querySelectorAll("#skillBody tr").forEach(tr => {
+        tr.classList.toggle("sel", tr.dataset.skillId === id);
+      });
+      const pre = document.getElementById("skillDetail");
+      pre.textContent = "加载中…";
+      document.getElementById("skillSaveMsg").textContent = "";
+      try {
+        const r = await jyisApiFetch(API + "/skills/" + encodeURIComponent(id));
+        if (!r.ok) throw new Error(await r.text());
+        const j = await r.json();
+        pre.textContent = JSON.stringify(j, null, 2);
+        document.getElementById("edName").value = j.name || "";
+        document.getElementById("edDesc").value = j.description != null ? String(j.description) : "";
+        document.getElementById("edCat").value = j.category || "common";
+        document.getElementById("edLvl").value = j.level || "middle";
+        setEditEnabled(true);
+      } catch (e) {
+        pre.textContent = String(e);
+        setEditEnabled(false);
+      }
+    }
+
+    document.getElementById("btnLoad").addEventListener("click", loadSkills);
+    document.getElementById("qCat").addEventListener("keydown", ev => {
+      if (ev.key === "Enter") loadSkills();
+    });
+    document.getElementById("qSkill").addEventListener("keydown", ev => {
+      if (ev.key === "Enter") loadSkills();
+    });
+
+    document.getElementById("skillBody").addEventListener("click", ev => {
+      let t = ev.target;
+      if (t.nodeType === 3) t = t.parentElement;
+      if (!t || t.nodeType !== 1) return;
+      const row = t.closest("tr");
+      if (!row || !row.dataset.skillId) return;
+      selectSkill(row.dataset.skillId);
+    });
+
+    document.getElementById("btnDeleteSkill").addEventListener("click", async () => {
+      const msg = document.getElementById("skillSaveMsg");
+      msg.textContent = "";
+      msg.className = "meta";
+      if (!selectedSkillId) return;
+      if (!confirm("确认删除该技能？此操作不可撤销。")) return;
+      try {
+        const r = await jyisApiFetch(API + "/skills/" + encodeURIComponent(selectedSkillId), {
+          method: "DELETE",
+        });
+        if (!r.ok) {
+          msg.textContent = (await r.text()).slice(0, 240);
+          msg.className = "meta err";
+          return;
+        }
+        msg.textContent = "已删除";
+        selectedSkillId = null;
+        document.getElementById("skillDetail").textContent = "—";
+        document.getElementById("edName").value = "";
+        document.getElementById("edDesc").value = "";
+        document.getElementById("edCat").value = "common";
+        document.getElementById("edLvl").value = "middle";
+        setEditEnabled(false);
+        document.querySelectorAll("#skillBody tr").forEach(tr => tr.classList.remove("sel"));
+        await loadSkills();
+      } catch (e) {
+        msg.textContent = String(e);
+        msg.className = "meta err";
+      }
+    });
+
+    document.getElementById("btnSaveSkill").addEventListener("click", async () => {
+      const msg = document.getElementById("skillSaveMsg");
+      msg.textContent = "";
+      msg.className = "meta";
+      if (!selectedSkillId) return;
+      const name = document.getElementById("edName").value.trim();
+      if (!name) {
+        msg.textContent = "名称不能为空";
+        msg.className = "meta err";
+        return;
+      }
+      const body = {
+        name,
+        description: document.getElementById("edDesc").value.trim(),
+        category: document.getElementById("edCat").value,
+        level: document.getElementById("edLvl").value,
+      };
+      try {
+        const r = await jyisApiFetch(API + "/skills/" + encodeURIComponent(selectedSkillId), {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        if (!r.ok) {
+          msg.textContent = (await r.text()).slice(0, 240);
+          msg.className = "meta err";
+          return;
+        }
+        msg.textContent = "已保存";
+        await loadSkills();
+        await selectSkill(selectedSkillId);
+      } catch (e) {
+        msg.textContent = String(e);
+        msg.className = "meta err";
+      }
+    });
+
+    document.getElementById("btnCreate").addEventListener("click", async () => {
+      const name = document.getElementById("skName").value.trim();
+      if (!name) {
+        alert("请填写技能名称");
+        return;
+      }
+      const body = {
+        name,
+        description: document.getElementById("skDesc").value.trim(),
+        category: document.getElementById("skCat").value,
+        level: document.getElementById("skLvl").value,
+        linked_agent_ids: [],
+      };
+      const r = await jyisApiFetch(API + "/skills", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const t = await r.text();
+      if (!r.ok) {
+        alert("创建失败 " + r.status + " " + t.slice(0, 240));
+        return;
+      }
+      document.getElementById("skName").value = "";
+      document.getElementById("skDesc").value = "";
+      document.getElementById("skCat").value = "common";
+      document.getElementById("skLvl").value = "middle";
+      await loadSkills();
+    });
+
+    (async () => {
+      const ub = typeof jyisInitUserBar === "function" ? jyisInitUserBar({ apiBase: API }) : null;
+      if (ub && ub.refresh) await ub.refresh();
+      await loadSkills();
+    })();
+  </script>
+</body>
+</html>

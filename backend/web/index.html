@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>纪光元生 · 老板工作台</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --panel: #1a2332;
+      --text: #e6edf3;
+      --muted: #8b9cb3;
+      --accent: #3d8bfd;
+      --ok: #3fb950;
+      --border: #30363d;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: "Segoe UI", system-ui, sans-serif;
+      background: var(--bg); color: var(--text); min-height: 100vh;
+    }
+    header {
+      padding: 1rem 1.5rem; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;
+    }
+    h1 { font-size: 1.1rem; font-weight: 600; margin: 0; }
+    .badge { font-size: 0.75rem; color: var(--muted); }
+    main { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; padding: 1rem; max-width: 1200px; margin: 0 auto; }
+    @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+    section {
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 8px; padding: 1rem;
+    }
+    h2 { margin: 0 0 0.75rem; font-size: 0.95rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+    pre, .mono { font-family: ui-monospace, monospace; font-size: 0.8rem; white-space: pre-wrap; word-break: break-all; }
+    ul.tree { list-style: none; padding-left: 0.75rem; margin: 0; }
+    ul.tree ul { margin: 0.25rem 0; }
+    .node { padding: 0.2rem 0; color: var(--text); }
+    .node small { color: var(--muted); }
+    textarea, input[type="text"] {
+      width: 100%; background: #0d1117; border: 1px solid var(--border); color: var(--text);
+      border-radius: 6px; padding: 0.5rem; margin-bottom: 0.5rem;
+    }
+    textarea { min-height: 72px; resize: vertical; }
+    button {
+      background: var(--accent); color: #fff; border: none; padding: 0.45rem 0.9rem;
+      border-radius: 6px; cursor: pointer; font-size: 0.85rem;
+    }
+    button:hover { filter: brightness(1.08); }
+    button.secondary { background: #30363d; }
+    .cmds { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.5rem; }
+    .out { max-height: 220px; overflow: auto; margin-top: 0.5rem; padding: 0.5rem; background: #0d1117; border-radius: 6px; border: 1px solid var(--border); }
+    .ok { color: var(--ok); }
+    .err { color: #f85149; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .full-span { grid-column: 1 / -1; }
+    .hint { font-size: 0.78rem; color: var(--muted); margin: 0 0 0.5rem; }
+    .stat-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.5rem; margin-bottom: 0.75rem; }
+    .stat-card { background: #0d1117; border: 1px solid var(--border); border-radius: 6px; padding: 0.5rem 0.65rem; }
+    .stat-k { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    .stat-v { font-size: 0.95rem; font-weight: 600; margin-top: 0.2rem; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    th, td { border: 1px solid var(--border); padding: 0.35rem 0.5rem; text-align: left; }
+    th { background: #0d1117; color: var(--muted); font-weight: 600; }
+    .pbar { height: 6px; background: #21262d; border-radius: 3px; overflow: hidden; min-width: 64px; display: inline-block; vertical-align: middle; margin-right: 6px; }
+    .pfill { height: 100%; background: var(--accent); border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>老板工作台 <span class="badge">PH4-T01 · 暗色</span></h1>
+      <p class="badge" style="margin:0.35rem 0 0">
+        <a href="/ui/agents.html">智能体</a>
+        · <a href="/ui/collab.html">协作委托</a>
+        · <a href="/ui/marketing.html">营销中心</a>
+        · <a href="/ui/skills.html">技能库</a>
+        · <a href="/ui/memory.html">工作记忆</a>
+        · <a href="/ui/tasks.html">任务看板</a>
+        · <a href="/ui/chat.html">对话会话</a>
+        · <a href="/docs" target="_blank" rel="noopener noreferrer">Swagger</a>
+        · <a href="/redoc" target="_blank" rel="noopener noreferrer">ReDoc</a>
+        · <a href="/ui/login.html">登录</a>
+      </p>
+      <p class="meta mono" id="userBar" style="margin:0.35rem 0 0">—</p>
+    </div>
+    <div class="mono" id="sysbar">加载中…</div>
+  </header>
+  <main>
+    <section>
+      <h2>系统状态</h2>
+      <div class="stat-cards" id="statusCards"></div>
+      <pre id="health">—</pre>
+    </section>
+    <section>
+      <h2>项目摘要</h2>
+      <div id="projectLinks"></div>
+      <pre id="projectsRaw" class="mono" style="max-height:100px;overflow:auto;margin-top:0.5rem;font-size:0.75rem;color:var(--muted)">—</pre>
+    </section>
+    <section class="full-span">
+      <h2>待审批项目</h2>
+      <p class="hint">调用 <code>GET /projects/pending-approvals</code>；<strong>审批链进度</strong>中 ✓ 已通过、<strong>粗体</strong>为当前待批、○ 未到达。</p>
+      <div style="overflow:auto">
+        <table>
+          <thead><tr><th>项目</th><th>审批链进度</th><th>当前节点</th><th>操作</th></tr></thead>
+          <tbody id="pendingBody"></tbody>
+        </table>
+      </div>
+    </section>
+    <section class="full-span">
+      <h2>任务进度</h2>
+      <p class="hint">各项目总进度与任务统计（最多 8 个；点击进入项目详情）</p>
+      <div style="overflow:auto">
+        <table>
+          <thead><tr><th>项目</th><th>状态</th><th>总进度</th><th>任务</th></tr></thead>
+          <tbody id="taskProgBody"></tbody>
+        </table>
+      </div>
+    </section>
+    <section>
+      <h2>组织架构</h2>
+      <div id="org"></div>
+    </section>
+    <section class="full-span">
+      <h2>策略审计（最近）</h2>
+      <p class="hint">内存中的策略评估记录（<code>GET /api/v1/audit/events</code>）与聚合摘要（<code>GET /api/v1/audit/summary</code>，支持 <code>event_type_prefix / policy_id / environment / reason_code_prefix</code>）；服务重启后清空。</p>
+      <p class="cmds" style="margin-bottom:0.5rem">
+        <label class="hint">类型前缀
+          <select id="auditFilter" style="margin-left:0.35rem;padding:0.25rem 0.5rem;border-radius:6px;border:1px solid var(--border);background:#0d1117;color:var(--text)">
+            <option value="">全部</option>
+            <option value="delegation">delegation</option>
+            <option value="policy">policy</option>
+          </select>
+        </label>
+        <label class="hint">策略
+          <select id="auditPolicyFilter" style="margin-left:0.35rem;padding:0.25rem 0.5rem;border-radius:6px;border:1px solid var(--border);background:#0d1117;color:var(--text)">
+            <option value="">全部</option>
+            <option value="collaboration">collaboration</option>
+            <option value="CEO-POLICY-13">CEO-POLICY-13</option>
+            <option value="CEO-POLICY-14">CEO-POLICY-14</option>
+          </select>
+        </label>
+        <label class="hint">环境
+          <select id="auditEnvFilter" style="margin-left:0.35rem;padding:0.25rem 0.5rem;border-radius:6px;border:1px solid var(--border);background:#0d1117;color:var(--text)">
+            <option value="">全部</option>
+            <option value="dev">dev</option>
+            <option value="staging">staging</option>
+            <option value="prod">prod</option>
+          </select>
+        </label>
+        <label class="hint">原因码前缀
+          <input id="auditReasonCodeFilter" type="text" placeholder="如 LAW_" style="margin-left:0.35rem;padding:0.25rem 0.5rem;border-radius:6px;border:1px solid var(--border);background:#0d1117;color:var(--text);width:9rem" />
+        </label>
+        <button type="button" class="secondary" id="btnAuditApply">应用筛选</button>
+      </p>
+      <div style="overflow:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>时间</th>
+              <th>类型</th>
+              <th>策略</th>
+              <th>环境</th>
+              <th>结果</th>
+              <th>路径</th>
+            </tr>
+          </thead>
+          <tbody id="auditBody"></tbody>
+        </table>
+      </div>
+      <div style="margin-top:0.75rem;display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+        <div style="background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:0.6rem">
+          <div id="auditHealthSummary" class="hint" style="margin-bottom:0.35rem">—</div>
+          <div class="hint" style="margin-bottom:0.35rem">近7天审计趋势（总数 / 拒绝数）</div>
+          <div id="auditTrend" class="mono">—</div>
+        </div>
+        <div style="background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:0.6rem">
+          <div class="hint" style="margin-bottom:0.35rem">Top拒绝原因（reason_code）</div>
+          <div id="auditTopReasons" class="mono">—</div>
+        </div>
+      </div>
+    </section>
+    <section>
+      <h2>对话（SSE）</h2>
+      <p class="hint">快捷指令（填入输入框，可再编辑后发送）</p>
+      <div class="cmds">
+        <button type="button" class="secondary" data-q="汇总当前各项目进度、阻塞任务与下一步建议">总览</button>
+        <button type="button" class="secondary" data-q="查看项目进度与里程碑">进度</button>
+        <button type="button" class="secondary" data-q="梳理跨项目风险与依赖，给出缓解动作">风险</button>
+        <button type="button" class="secondary" data-q="draft 项目提交审批前需要检查哪些材料">立项</button>
+        <button type="button" class="secondary" data-q="安排营销增长实验">营销</button>
+        <button type="button" class="secondary" data-q="接口缺陷与回归">工程</button>
+      </div>
+      <textarea id="msg" placeholder="输入消息后发送（流式）…"></textarea>
+      <button type="button" id="send">发送</button>
+      <div class="out mono" id="chatout"></div>
+    </section>
+  </main>
+  <script src="api-client.js"></script>
+  <script>
+    const API = "/api/v1";
+    const LAW = ["LAW-04", "LAW-05"];
+
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function renderStatusCards(h, llm) {
+      const c = document.getElementById("statusCards");
+      c.innerHTML = "";
+      const pe = h.policy_engine || {};
+      const rows = [
+        ["服务", h.status || "—"],
+        ["运行模式", h.runtime_mode || "—"],
+        ["策略引擎", pe.loaded ? "已加载" : "未就绪"],
+      ];
+      if (llm && typeof llm === "object") {
+        const on = llm.llm_enabled && llm.api_configured;
+        const ready = llm.api_configured && !llm.llm_enabled;
+        const llmLine =
+          (on ? "已启用" : ready ? "可启用" : "未配密钥") +
+          " · " +
+          String(llm.primary_model || "—");
+        rows.push(["大模型", llmLine]);
+      }
+      rows.forEach(([k, v]) => {
+        const d = document.createElement("div");
+        d.className = "stat-card";
+        d.innerHTML =
+          "<div class=\"stat-k\">" + escapeHtml(k) + "</div><div class=\"stat-v\">" + escapeHtml(String(v)) + "</div>";
+        c.appendChild(d);
+      });
+    }
+
+    async function refreshSys() {
+      try {
+        const [h, llm] = await Promise.all([
+          fetch("/healthz").then(r => r.json()),
+          jyisApiFetch(API + "/llm/status")
+            .then(r => (r.ok ? r.json() : null))
+            .catch(() => null),
+        ]);
+        document.getElementById("health").textContent = JSON.stringify(h, null, 2);
+        renderStatusCards(h, llm);
+        let llmHint = "";
+        if (llm && typeof llm === "object") {
+          llmHint =
+            " · LLM=" +
+            (llm.llm_enabled && llm.api_configured ? "<span class=\"ok\">on</span>" : "off") +
+            "/" +
+            escapeHtml(String(llm.primary_model || "?"));
+        }
+        document.getElementById("sysbar").innerHTML =
+          "<span class=\"ok\">●</span> " +
+          escapeHtml(String(h.status)) +
+          " · runtime=<b>" +
+          escapeHtml(String(h.runtime_mode)) +
+          "</b> · policy=" +
+          (h.policy_engine && h.policy_engine.loaded ? "<span class=\"ok\">OK</span>" : "?") +
+          llmHint;
+      } catch (e) {
+        document.getElementById("statusCards").innerHTML = "";
+        document.getElementById("sysbar").innerHTML = "<span class=\"err\">离线</span> " + escapeHtml(String(e));
+      }
+    }
+
+    async function refreshAudit() {
+      const tb = document.getElementById("auditBody");
+      if (!tb) return;
+      tb.innerHTML = "";
+      const trendEl = document.getElementById("auditTrend");
+      const topEl = document.getElementById("auditTopReasons");
+      const healthEl = document.getElementById("auditHealthSummary");
+      if (trendEl) trendEl.textContent = "加载中…";
+      if (topEl) topEl.textContent = "加载中…";
+      if (healthEl) healthEl.textContent = "加载中…";
+      try {
+        const af = document.getElementById("auditFilter");
+        const pfx = af && af.value ? String(af.value).trim() : "";
+        const pf = document.getElementById("auditPolicyFilter");
+        const pid = pf && pf.value ? String(pf.value).trim() : "";
+        const ef = document.getElementById("auditEnvFilter");
+        const env = ef && ef.value ? String(ef.value).trim() : "";
+        const rf = document.getElementById("auditReasonCodeFilter");
+        const rcPrefix = rf && rf.value ? String(rf.value).trim() : "";
+        const qs = new URLSearchParams({ limit: "12" });
+        if (pfx) qs.set("event_type_prefix", pfx);
+        if (pid) qs.set("policy_id", pid);
+        if (env) qs.set("environment", env);
+        if (rcPrefix) qs.set("reason_code_prefix", rcPrefix);
+        const [r, rs] = await Promise.all([
+          jyisApiFetch(API + "/audit/events?" + qs.toString()),
+          jyisApiFetch(API + "/audit/summary?" + qs.toString() + "&days=7&top_limit=5"),
+        ]);
+        if (!r.ok) throw new Error(r.status + " " + (await r.text()));
+        if (!rs.ok) throw new Error(rs.status + " " + (await rs.text()));
+        const evs = (await r.json()).events || [];
+        renderAuditInsights((await rs.json()) || {});
+        if (!evs.length) {
+          tb.innerHTML =
+            "<tr><td colspan=\"6\" class=\"hint\">暂无审计记录（触发对话、发布、委托或审批后可在此看到）</td></tr>";
+          return;
+        }
+        evs
+          .slice()
+          .reverse()
+          .forEach(ev => {
+            const tr = document.createElement("tr");
+            const ok = ev.allowed ? "允许" : "拒绝";
+            const okClass = ev.allowed ? "ok" : "err";
+            const reason = String(ev.reason || "").slice(0, 80);
+            tr.innerHTML =
+              "<td class=\"mono\">" +
+              escapeHtml(String(ev.timestamp || "")) +
+              "</td><td class=\"mono\">" +
+              escapeHtml(String(ev.event_type || "")) +
+              "</td><td class=\"mono\">" +
+              escapeHtml(String(ev.policy_id || "")) +
+              "</td><td>" +
+              escapeHtml(String(ev.environment || "")) +
+              "</td><td class=\"" +
+              okClass +
+              "\">" +
+              escapeHtml(ok) +
+              "<div class=\"hint\" style=\"margin-top:0.2rem\">" +
+              escapeHtml(reason) +
+              "</div></td><td class=\"mono\">" +
+              escapeHtml(String(ev.endpoint || "").slice(0, 64)) +
+              "</td>";
+            tb.appendChild(tr);
+          });
+      } catch (e) {
+        tb.innerHTML = "<tr><td colspan=\"6\" class=\"err\">" + escapeHtml(String(e)) + "</td></tr>";
+        if (trendEl) trendEl.textContent = String(e);
+        if (topEl) topEl.textContent = String(e);
+        if (healthEl) healthEl.textContent = String(e);
+      }
+    }
+
+    function renderAuditInsights(summary) {
+      const trendEl = document.getElementById("auditTrend");
+      const topEl = document.getElementById("auditTopReasons");
+      const healthEl = document.getElementById("auditHealthSummary");
+      if (!trendEl || !topEl || !healthEl) return;
+      const trend = Array.isArray(summary && summary.trend) ? summary.trend : [];
+      const tops = Array.isArray(summary && summary.top_reasons) ? summary.top_reasons : [];
+      const total = Number(summary && summary.total_events ? summary.total_events : 0);
+      const deniedRate = Number(summary && summary.denied_rate ? summary.denied_rate : 0);
+      const allowedRate = Number(summary && summary.allowed_rate ? summary.allowed_rate : 100);
+      healthEl.innerHTML =
+        "总计 " +
+        escapeHtml(String(total)) +
+        " 条，允许率 " +
+        (allowedRate < 80 ? "<span class=\"err\">" : "<span class=\"ok\">") +
+        escapeHtml(String(allowedRate)) +
+        "%</span>，拒绝率 " +
+        escapeHtml(String(deniedRate)) +
+        "%";
+      if (!trend.length) {
+        trendEl.textContent = "暂无数据";
+      } else {
+        trendEl.textContent = trend
+          .map(x => {
+            const rate = Number(x.allowed_rate || 0);
+            const warn = rate < 80 ? " ⚠" : "";
+            return (
+              String(x.day || "") +
+              "  total=" +
+              String(x.total || 0) +
+              "  denied=" +
+              String(x.denied || 0) +
+              "  allowed_rate=" +
+              String(rate) +
+              "%" +
+              warn
+            );
+          })
+          .join("\n");
+      }
+      if (!tops.length) {
+        topEl.textContent = "暂无数据";
+      } else {
+        topEl.textContent = tops
+          .map(x => String(x.reason_code || "UNKNOWN") + " × " + String(x.count || 0))
+          .join("\n");
+      }
+    }
+
+    /** @returns {Promise<any[]>} */
+    async function fetchProjectList() {
+      const r = await jyisApiFetch(API + "/projects");
+      if (!r.ok) throw new Error(r.status + " " + (await r.text()));
+      const data = await r.json();
+      return Array.isArray(data) ? data : [];
+    }
+
+    function renderProjectLinksFromData(data) {
+      const box = document.getElementById("projectLinks");
+      const raw = document.getElementById("projectsRaw");
+      box.innerHTML = "";
+      (data || []).slice(0, 12).forEach(p => {
+        const a = document.createElement("a");
+        a.href = "/ui/project.html?id=" + encodeURIComponent(p.id);
+        a.textContent = (p.name || p.id) + " · " + p.id;
+        a.style.display = "block";
+        a.style.margin = "0.3rem 0";
+        box.appendChild(a);
+      });
+      raw.textContent = JSON.stringify((data || []).slice(0, 2), null, 2);
+    }
+
+    async function refreshProjects() {
+      try {
+        const data = await fetchProjectList();
+        renderProjectLinksFromData(data);
+      } catch (e) {
+        document.getElementById("projectLinks").textContent = "";
+        document.getElementById("projectsRaw").textContent = String(e);
+      }
+    }
+
+    /** @param {any[]|undefined} prefetched 已拉取的项目列表时可传入，避免重复请求 */
+    async function refreshTaskProgress(prefetched) {
+      const tb = document.getElementById("taskProgBody");
+      tb.innerHTML = "";
+      try {
+        const data = prefetched !== undefined ? prefetched : await fetchProjectList();
+        const slice = data.slice(0, 8);
+        const rows = await Promise.all(
+          slice.map(async p => {
+            const pr = await jyisApiFetch(API + "/projects/" + encodeURIComponent(p.id) + "/progress").then(r => r.json());
+            return { p, pr };
+          }),
+        );
+        rows.forEach(({ p, pr }) => {
+          const tr = document.createElement("tr");
+          const pct = Math.min(100, Math.max(0, Number(pr.overall_progress) || 0));
+          const nameEsc = escapeHtml(p.name || p.id);
+          const idEsc = escapeHtml(p.id);
+          const stEsc = escapeHtml(String(pr.project_status ?? "—"));
+          const bar =
+            "<div class=\"pbar\"><div class=\"pfill\" style=\"width:" +
+            pct +
+            "%\"></div></div><span class=\"mono\">" +
+            pct +
+            "%</span>";
+          const tasksTxt = escapeHtml(String(pr.completed_task_count ?? 0) + " / " + String(pr.task_count ?? 0));
+          tr.innerHTML =
+            "<td><a href=\"/ui/project.html?id=" +
+            encodeURIComponent(p.id) +
+            "\">" +
+            nameEsc +
+            "</a><div class=\"mono hint\" style=\"margin:0.15rem 0 0\">" +
+            idEsc +
+            "</div></td><td>" +
+            stEsc +
+            "</td><td>" +
+            bar +
+            "</td><td class=\"mono\">" +
+            tasksTxt +
+            "</td>";
+          tb.appendChild(tr);
+        });
+        if (!slice.length) {
+          const tr = document.createElement("tr");
+          tr.innerHTML = "<td colspan=\"4\"><span class=\"hint\">暂无项目</span></td>";
+          tb.appendChild(tr);
+        }
+      } catch (e) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = "<td colspan=\"4\" class=\"err\">" + escapeHtml(String(e)) + "</td>";
+        tb.appendChild(tr);
+      }
+    }
+
+    function renderTree(nodes, ul) {
+      nodes.forEach(n => {
+        const li = document.createElement("li");
+        li.className = "node";
+        li.innerHTML =
+          "<strong>" +
+          escapeHtml(n.name) +
+          "</strong> <small>" +
+          escapeHtml(n.id) +
+          " · " +
+          escapeHtml(n.level) +
+          " · " +
+          escapeHtml(n.role || "-") +
+          "</small>";
+        ul.appendChild(li);
+        if (n.children && n.children.length) {
+          const sub = document.createElement("ul");
+          sub.className = "tree";
+          li.appendChild(sub);
+          renderTree(n.children, sub);
+        }
+      });
+    }
+
+    function pendingApproverLevel(p) {
+      const ap = p.approval || {};
+      const chain = ap.chain || [];
+      const step = Number(ap.step) || 0;
+      if (step >= chain.length) return null;
+      return String(chain[step]);
+    }
+
+    function formatApprovalChainProgressHtml(p) {
+      const ap = p.approval || {};
+      const chain = ap.chain || [];
+      const step = Number(ap.step) || 0;
+      if (!chain.length) return escapeHtml("—");
+      return chain
+        .map((lev, i) => {
+          const L = escapeHtml(String(lev));
+          if (i < step) return L + "<span class=\"hint\">✓</span>";
+          if (i === step) return "<strong>" + L + "</strong><span class=\"hint\">·待批</span>";
+          return L + "<span class=\"hint\">○</span>";
+        })
+        .join(' <span class="hint">→</span> ');
+    }
+
+    async function refreshPendingApprovals() {
+      const tb = document.getElementById("pendingBody");
+      tb.innerHTML = "";
+      try {
+        const r = await jyisApiFetch(API + "/projects/pending-approvals").then(x => x.json());
+        const items = r.items || [];
+        if (!items.length) {
+          tb.innerHTML = "<tr><td colspan=\"4\" class=\"hint\">暂无待审批项目</td></tr>";
+          return;
+        }
+        items.forEach(p => {
+          const lvl = pendingApproverLevel(p);
+          const tr = document.createElement("tr");
+          const name = escapeHtml(p.name || p.id);
+          const pid = escapeHtml(p.id);
+          const lv = lvl ? escapeHtml(lvl) : "—";
+          const prog = formatApprovalChainProgressHtml(p);
+          const actions =
+            lvl != null
+              ? "<button type=\"button\" class=\"secondary btn-appr\" data-pid=\"" +
+                encodeURIComponent(p.id) +
+                "\" data-level=\"" +
+                escapeHtml(lvl) +
+                "\">通过</button> <button type=\"button\" class=\"secondary btn-rej\" data-pid=\"" +
+                encodeURIComponent(p.id) +
+                "\" data-level=\"" +
+                escapeHtml(lvl) +
+                "\">驳回</button>"
+              : "<span class=\"hint\">—</span>";
+          tr.innerHTML =
+            "<td><a href=\"/ui/project.html?id=" +
+            encodeURIComponent(p.id) +
+            "\">" +
+            name +
+            "</a><div class=\"mono hint\" style=\"margin:0.15rem 0 0\">" +
+            pid +
+            "</div></td><td>" +
+            prog +
+            "</td><td class=\"mono\">" +
+            lv +
+            "</td><td class=\"row\">" +
+            actions +
+            "</td>";
+          tb.appendChild(tr);
+        });
+      } catch (e) {
+        tb.innerHTML = "<tr><td colspan=\"4\" class=\"err\">" + escapeHtml(String(e)) + "</td></tr>";
+      }
+    }
+
+    document.getElementById("pendingBody").addEventListener("click", async ev => {
+      const t = ev.target;
+      if (!(t instanceof HTMLElement)) return;
+      const pid = t.getAttribute("data-pid");
+      const level = t.getAttribute("data-level");
+      if (!pid || !level) return;
+      const dec = decodeURIComponent(pid);
+      if (t.classList.contains("btn-appr")) {
+        const r = await jyisApiFetch(API + "/projects/" + encodeURIComponent(dec) + "/approve", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ level }),
+        });
+        if (!r.ok) {
+          alert("通过失败 " + r.status + " " + (await r.text()).slice(0, 200));
+          return;
+        }
+        await refreshPendingApprovals();
+        try {
+          const data = await fetchProjectList();
+          renderProjectLinksFromData(data);
+          await refreshTaskProgress(data);
+        } catch (_) {}
+      }
+      if (t.classList.contains("btn-rej")) {
+        const reason = window.prompt("驳回理由（必填）");
+        if (!reason || !String(reason).trim()) return;
+        const r = await jyisApiFetch(API + "/projects/" + encodeURIComponent(dec) + "/reject", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ level, reason: String(reason).trim() }),
+        });
+        if (!r.ok) {
+          alert("驳回失败 " + r.status + " " + (await r.text()).slice(0, 200));
+          return;
+        }
+        await refreshPendingApprovals();
+        try {
+          const data = await fetchProjectList();
+          renderProjectLinksFromData(data);
+          await refreshTaskProgress(data);
+        } catch (_) {}
+      }
+    });
+
+    async function refreshOrg() {
+      const el = document.getElementById("org");
+      el.textContent = "加载…";
+      try {
+        const r = await jyisApiFetch(API + "/agents/org-tree");
+        const data = await r.json();
+        el.textContent = "";
+        const ul = document.createElement("ul");
+        ul.className = "tree";
+        renderTree(data.roots || [], ul);
+        el.appendChild(ul);
+      } catch (e) {
+        el.textContent = String(e);
+      }
+    }
+
+    async function sendChat() {
+      const out = document.getElementById("chatout");
+      const text = document.getElementById("msg").value.trim();
+      if (!text) return;
+      out.textContent = "";
+      const sess = await jyisApiFetch(API + "/chat/sessions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: "ui" }) }).then(r => r.json());
+      const url = API + "/chat/sessions/" + sess.id + "/messages/stream";
+      const resp = await jyisApiFetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text, environment: "dev", law: LAW }),
+      });
+      if (!resp.ok) { out.textContent = "错误 " + resp.status; return; }
+      const reader = resp.body.getReader();
+      const dec = new TextDecoder();
+      let buf = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += dec.decode(value, { stream: true });
+        const parts = buf.split("\n\n");
+        buf = parts.pop() || "";
+        for (const block of parts) {
+          for (const line of block.split("\n")) {
+            if (line.startsWith("data: ")) {
+              try {
+                const j = JSON.parse(line.slice(6));
+                if (j.type === "delta") out.textContent += j.content || "";
+                if (j.type === "done") out.textContent += "\n\n[完成]";
+              } catch (_) {}
+            }
+          }
+        }
+      }
+    }
+
+    document.getElementById("send").addEventListener("click", sendChat);
+    document.querySelectorAll(".cmds button").forEach(b => {
+      b.addEventListener("click", () => { document.getElementById("msg").value = b.dataset.q || ""; });
+    });
+    const btnAudit = document.getElementById("btnAuditApply");
+    if (btnAudit) btnAudit.addEventListener("click", () => refreshAudit());
+
+    async function boot() {
+      await refreshSys();
+      try {
+        const data = await fetchProjectList();
+        renderProjectLinksFromData(data);
+        await refreshTaskProgress(data);
+      } catch (e) {
+        document.getElementById("projectLinks").textContent = "";
+        document.getElementById("projectsRaw").textContent = String(e);
+        document.getElementById("taskProgBody").innerHTML =
+          "<tr><td colspan=\"4\" class=\"err\">" + escapeHtml(String(e)) + "</td></tr>";
+      }
+      await refreshOrg();
+      await refreshPendingApprovals();
+      await refreshAudit();
+      const ub = typeof jyisInitUserBar === "function" ? jyisInitUserBar({ apiBase: API }) : null;
+      if (ub && ub.refresh) await ub.refresh();
+    }
+    boot();
+    setInterval(refreshSys, 15000);
+    setInterval(() => {
+      refreshTaskProgress().catch(() => {});
+    }, 45000);
+    setInterval(() => {
+      refreshPendingApprovals().catch(() => {});
+    }, 60000);
+    setInterval(() => {
+      refreshAudit().catch(() => {});
+    }, 90000);
+  </script>
+</body>
+</html>

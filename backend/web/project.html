@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>项目详情 · 纪光元生</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --panel: #1a2332;
+      --text: #e6edf3;
+      --muted: #8b9cb3;
+      --accent: #3d8bfd;
+      --border: #30363d;
+      --ok: #3fb950;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); }
+    header {
+      padding: 0.85rem 1.25rem; border-bottom: 1px solid var(--border);
+      display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; justify-content: space-between;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    main { max-width: 1100px; margin: 0 auto; padding: 1rem; display: flex; flex-direction: column; gap: 1rem; }
+    section {
+      background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 1rem;
+    }
+    h2 { margin: 0 0 0.6rem; font-size: 0.85rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    h1 { margin: 0; font-size: 1.15rem; }
+    .meta { font-size: 0.8rem; color: var(--muted); }
+    pre, .mono { font-family: ui-monospace, monospace; font-size: 0.78rem; white-space: pre-wrap; word-break: break-all; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+    th, td { border: 1px solid var(--border); padding: 0.35rem 0.5rem; text-align: left; }
+    th { background: #0d1117; color: var(--muted); font-weight: 600; }
+    ul.tree { list-style: none; padding-left: 0.75rem; margin: 0; }
+    .node { padding: 0.15rem 0; }
+    .node small { color: var(--muted); }
+    textarea {
+      width: 100%; min-height: 64px; background: #0d1117; border: 1px solid var(--border); color: var(--text);
+      border-radius: 6px; padding: 0.5rem; margin: 0.35rem 0;
+    }
+    button {
+      background: var(--accent); color: #fff; border: none; padding: 0.45rem 0.85rem;
+      border-radius: 6px; cursor: pointer; font-size: 0.85rem;
+    }
+    button.secondary { background: #30363d; }
+    .row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+    .pill { font-size: 0.75rem; padding: 0.15rem 0.45rem; border-radius: 999px; background: #21262d; color: var(--muted); }
+    .err { color: #f85149; }
+    .ok { color: var(--ok); }
+    .gbar {
+      height: 8px; background: #21262d; border-radius: 4px; overflow: hidden;
+      min-width: 72px; display: inline-block; vertical-align: middle; margin-right: 6px;
+    }
+    .gfill { height: 100%; background: var(--accent); border-radius: 4px; }
+    .disc-item { border-bottom: 1px solid var(--border); padding: 0.5rem 0; font-size: 0.88rem; }
+    .disc-meta { color: var(--muted); font-size: 0.78rem; margin-bottom: 0.25rem; }
+    input[type="text"].inline {
+      width: 100%; max-width: 280px; background: #0d1117; border: 1px solid var(--border); color: var(--text);
+      border-radius: 6px; padding: 0.4rem 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="row">
+      <a href="/ui/">← 工作台</a>
+      <span class="meta">· <a href="/ui/agents.html">智能体</a> · <a href="/ui/collab.html">协作委托</a> · <a href="/ui/marketing.html">营销中心</a> · <a href="/ui/skills.html">技能库</a> · <a href="/ui/memory.html">工作记忆</a> · <a href="/ui/tasks.html">任务看板</a> · <a href="/ui/chat.html">对话会话</a></span>
+      <h1 id="title">项目详情</h1>
+    </div>
+    <div class="meta mono" id="pid"></div>
+    <div class="meta mono" id="userBar" style="margin-top:0.35rem">—</div>
+    <div class="meta" style="margin-top:0.25rem">
+      <a href="/docs" target="_blank" rel="noopener noreferrer">Swagger</a>
+      · <a href="/redoc" target="_blank" rel="noopener noreferrer">ReDoc</a>
+    </div>
+  </header>
+  <main>
+    <section id="sec-proj">
+      <h2>基本信息</h2>
+      <pre id="proj">加载中…</pre>
+    </section>
+    <section id="sec-approval">
+      <h2>立项审批</h2>
+      <p class="meta">草稿可提交默认链 <code>L3→L2→L1</code>；待审批时 ✓ 已通过、粗体为当前节点、○ 未到达。与会工作台审批接口一致。</p>
+      <div id="apprLine" class="pill mono" style="display:inline-block;margin-bottom:0.5rem">—</div>
+      <div id="apprDraft" style="display:none">
+        <label class="meta">审批链（逗号分隔，如 L3,L2,L1）</label>
+        <input type="text" class="inline" id="apprChainIn" value="L3,L2,L1" style="max-width:360px;display:block;margin:0.35rem 0" />
+        <button type="button" id="btnSubmitAppr">提交审批</button>
+      </div>
+      <div id="apprPending" style="display:none">
+        <div id="apprChainHtml" class="mono" style="font-size:0.85rem;margin:0.35rem 0;line-height:1.45"></div>
+        <div class="row">
+          <button type="button" id="btnAppr">通过当前节点</button>
+          <button type="button" class="secondary" id="btnRej">驳回</button>
+        </div>
+      </div>
+      <div id="apprDone" class="meta" style="display:none"></div>
+    </section>
+    <section>
+      <h2>进度</h2>
+      <div class="row" style="margin-bottom:0.5rem">
+        <span class="pill" id="pOverall">—</span>
+        <span class="pill" id="pTasks">—</span>
+      </div>
+      <pre id="progress" class="mono">—</pre>
+    </section>
+    <section id="sec-milestones">
+      <h2>里程碑</h2>
+      <p class="meta">来自项目 <code>milestones</code>，由 <code>GET …/progress</code> 返回；可通过 <code>PUT /projects/{id}</code> 更新整表。</p>
+      <div style="overflow:auto">
+        <table>
+          <thead><tr><th>名称</th><th>目标日期</th><th>完成</th></tr></thead>
+          <tbody id="milestoneBody"></tbody>
+        </table>
+      </div>
+      <label class="meta" style="display:block;margin-top:0.65rem">编辑 <code>milestones</code>（JSON 数组，每项可含 id / name / target_date / done 等字段）</label>
+      <textarea id="milestonesJson" class="mono" style="min-height:120px;font-size:0.78rem;margin-top:0.25rem"></textarea>
+      <button type="button" class="secondary" id="btnSaveMilestones" style="margin-top:0.35rem">保存里程碑</button>
+    </section>
+    <section id="sec-statusflow">
+      <h2>执行状态</h2>
+      <p class="meta">在允许的状态迁移下使用 <code>PATCH /api/v1/projects/{id}/status</code>。</p>
+      <div class="row" id="statusActions"></div>
+      <p id="statusFlowHint" class="meta" style="margin-top:0.35rem">—</p>
+    </section>
+    <section>
+      <h2>甘特数据</h2>
+      <div style="overflow:auto">
+        <table>
+          <thead><tr><th>任务</th><th>开始</th><th>结束</th><th>进度</th><th>状态</th></tr></thead>
+          <tbody id="ganttBody"></tbody>
+        </table>
+      </div>
+    </section>
+    <section>
+      <h2>任务树</h2>
+      <div id="taskTree">—</div>
+    </section>
+    <section>
+      <h2>项目团队</h2>
+      <p class="meta">由任务上的 <code>assignee_level</code> / <code>assignee_role</code> 汇总，并与组织架构中的智能体名称匹配。</p>
+      <div style="overflow:auto">
+        <table>
+          <thead><tr><th>层级</th><th>角色</th><th>任务数</th><th>匹配智能体</th></tr></thead>
+          <tbody id="teamBody"></tbody>
+        </table>
+      </div>
+    </section>
+    <section>
+      <h2>复盘报告</h2>
+      <p class="meta">保存至项目字段 <code>retrospective_report</code>（<code>PUT /api/v1/projects/{id}</code>）。</p>
+      <textarea id="retroBody" placeholder="记录里程碑、风险与改进项…" style="min-height:120px"></textarea>
+      <button type="button" id="btnRetro" style="margin-top:0.35rem">保存复盘</button>
+    </section>
+    <section>
+      <h2>项目讨论</h2>
+      <div id="discList"></div>
+      <input type="text" class="inline" id="discAuthor" placeholder="署名（可选）" style="margin-top:0.5rem" />
+      <textarea id="discBody" placeholder="发表讨论…" style="margin-top:0.35rem"></textarea>
+      <button type="button" id="btnDisc" style="margin-top:0.35rem">发送</button>
+    </section>
+    <section>
+      <h2>主脑拆解并入任务库</h2>
+      <p class="meta">调用 <code>POST /api/v1/ceo/planning/apply</code>，按策略 CEO-POLICY-09 校验后写入链式任务。</p>
+      <textarea id="instr" placeholder="描述本阶段目标，例如：推进里程碑评审与风险闭环"></textarea>
+      <div class="row">
+        <button type="button" id="btnApply">拆解并创建任务</button>
+        <button type="button" class="secondary" id="btnDry">仅预览（dry_run）</button>
+      </div>
+      <pre id="applyOut" class="mono" style="margin-top:0.5rem;max-height:240px;overflow:auto">—</pre>
+    </section>
+  </main>
+  <script src="api-client.js"></script>
+  <script>
+    const API = "/api/v1";
+    const LAW = ["LAW-04", "LAW-05"];
+    const params = new URLSearchParams(location.search);
+    const PROJECT_ID = params.get("id");
+
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function elErr(msg) {
+      document.getElementById("proj").innerHTML = `<span class="err">${msg}</span>`;
+    }
+
+    function pendingApproverLevelProj(proj) {
+      const ap = proj.approval || {};
+      const chain = ap.chain || [];
+      const step = Number(ap.step) || 0;
+      if (step >= chain.length) return null;
+      return String(chain[step]);
+    }
+
+    function formatApprovalChainHtml(proj) {
+      const ap = proj.approval || {};
+      const chain = ap.chain || [];
+      const step = Number(ap.step) || 0;
+      if (!chain.length) return escapeHtml("—");
+      return chain
+        .map((lev, i) => {
+          const L = escapeHtml(String(lev));
+          if (i < step) return L + "<span class=\"meta\">✓</span>";
+          if (i === step) return "<strong>" + L + "</strong><span class=\"meta\">·待批</span>";
+          return L + "<span class=\"meta\">○</span>";
+        })
+        .join(' <span class="meta">→</span> ');
+    }
+
+    function renderMilestones(items) {
+      const tb = document.getElementById("milestoneBody");
+      tb.innerHTML = "";
+      if (!items.length) {
+        const tr = document.createElement("tr");
+        tr.innerHTML =
+          "<td colspan=\"3\"><span class=\"meta\">暂无里程碑。可用 API 更新 <code>PUT …/projects/{id}</code> 的 <code>milestones</code> 数组。</span></td>";
+        tb.appendChild(tr);
+        return;
+      }
+      items.forEach(m => {
+        const tr = document.createElement("tr");
+        const done = m.done === true || m.done === "true";
+        tr.innerHTML =
+          "<td>" +
+          escapeHtml(String(m.name != null ? m.name : m.id || "—")) +
+          "</td><td class=\"mono\">" +
+          escapeHtml(String(m.target_date || "—")) +
+          "</td><td><span class=\"pill\">" +
+          escapeHtml(done ? "已完成" : "未完成") +
+          "</span></td>";
+        tb.appendChild(tr);
+      });
+    }
+
+    function renderStatusActions(projectStatus) {
+      const box = document.getElementById("statusActions");
+      const hint = document.getElementById("statusFlowHint");
+      const s = String(projectStatus || "");
+      hint.textContent = "当前项目状态：" + s;
+      box.innerHTML = "";
+      if (s === "approved") {
+        box.innerHTML =
+          "<button type=\"button\" data-status-action=\"in_progress\">开始执行（进入 in_progress）</button>";
+        return;
+      }
+      if (s === "in_progress") {
+        box.innerHTML =
+          "<button type=\"button\" data-status-action=\"completed\">标记完成</button> " +
+          "<button type=\"button\" class=\"secondary\" data-status-action=\"cancelled\">取消项目</button>";
+        return;
+      }
+      box.innerHTML = "<span class=\"meta\">本状态无快捷按钮（草稿请走「立项审批」；待审批请在工作台或本页审批）。</span>";
+    }
+
+    function renderApprovalPanel(proj) {
+      const st = String(proj.status || "");
+      const line = document.getElementById("apprLine");
+      line.textContent = "状态：" + st;
+      const dDraft = document.getElementById("apprDraft");
+      const dPen = document.getElementById("apprPending");
+      const dDone = document.getElementById("apprDone");
+      dDraft.style.display = "none";
+      dPen.style.display = "none";
+      dDone.style.display = "none";
+      if (st === "draft") {
+        dDraft.style.display = "block";
+        return;
+      }
+      if (st === "pending_approval") {
+        dPen.style.display = "block";
+        document.getElementById("apprChainHtml").innerHTML = formatApprovalChainHtml(proj);
+        const lvl = pendingApproverLevelProj(proj);
+        document.getElementById("btnAppr").style.display = lvl ? "inline-block" : "none";
+        document.getElementById("btnRej").style.display = lvl ? "inline-block" : "none";
+        document.getElementById("btnAppr").disabled = !lvl;
+        document.getElementById("btnRej").disabled = !lvl;
+        if (lvl) {
+          document.getElementById("btnAppr").setAttribute("data-level", lvl);
+          document.getElementById("btnRej").setAttribute("data-level", lvl);
+        }
+        return;
+      }
+      dDone.style.display = "block";
+      if (st === "rejected") {
+        const rsn = (proj.approval || {}).reject_reason || "";
+        dDone.textContent = "已驳回。" + (rsn ? "理由：" + rsn : "");
+      } else {
+        dDone.textContent = "当前状态为「" + st + "」，无需在此操作审批。";
+      }
+    }
+
+    function buildTaskTree(tasks) {
+      const byP = {};
+      tasks.forEach(t => {
+        const k = t.parent_id == null || t.parent_id === "" ? "__root__" : t.parent_id;
+        if (!byP[k]) byP[k] = [];
+        byP[k].push(t);
+      });
+      function walk(parentKey) {
+        return (byP[parentKey] || []).map(t => ({ t, ch: walk(t.id) }));
+      }
+      return walk("__root__");
+    }
+
+    function renderTasks(nodes, ul) {
+      nodes.forEach(({ t, ch }) => {
+        const li = document.createElement("li");
+        li.className = "node";
+        li.innerHTML =
+          "<strong>" +
+          escapeHtml(t.name) +
+          "</strong> <small>" +
+          escapeHtml(t.id) +
+          " · " +
+          escapeHtml(String(t.status ?? "")) +
+          " · " +
+          escapeHtml(String(t.progress ?? 0)) +
+          "%</small>";
+        ul.appendChild(li);
+        if (ch.length) {
+          const sub = document.createElement("ul");
+          sub.className = "tree";
+          li.appendChild(sub);
+          renderTasks(ch, sub);
+        }
+      });
+    }
+
+    async function loadAll() {
+      if (!PROJECT_ID) {
+        elErr("缺少参数 id，请从工作台项目链接进入。");
+        return;
+      }
+      document.getElementById("pid").textContent = PROJECT_ID;
+
+      let proj;
+      try {
+        const rp = await jyisApiFetch(API + "/projects/" + encodeURIComponent(PROJECT_ID));
+        if (!rp.ok) throw new Error(rp.status + " " + (await rp.text()));
+        proj = await rp.json();
+      } catch (e) {
+        elErr(String(e));
+        return;
+      }
+
+      document.getElementById("title").textContent = proj.name || "项目详情";
+      document.getElementById("proj").textContent = JSON.stringify(proj, null, 2);
+      renderApprovalPanel(proj);
+
+      const [pr, gg, tk, dc, tm] = await Promise.all([
+        jyisApiFetch(API + "/projects/" + encodeURIComponent(PROJECT_ID) + "/progress").then(r => r.json()),
+        jyisApiFetch(API + "/projects/" + encodeURIComponent(PROJECT_ID) + "/gantt").then(r => r.json()),
+        jyisApiFetch(API + "/tasks?project_id=" + encodeURIComponent(PROJECT_ID) + "&limit=500").then(r => r.json()),
+        jyisApiFetch(API + "/projects/" + encodeURIComponent(PROJECT_ID) + "/discussion").then(r => r.json()),
+        jyisApiFetch(API + "/projects/" + encodeURIComponent(PROJECT_ID) + "/team").then(r => r.json()),
+      ]);
+
+      document.getElementById("pOverall").textContent = "总进度 " + (pr.overall_progress ?? "—") + "%";
+      document.getElementById("pTasks").textContent = "任务 " + (pr.task_count ?? 0) + " · 完成 " + (pr.completed_task_count ?? 0);
+      document.getElementById("progress").textContent = JSON.stringify(pr, null, 2);
+
+      renderMilestones(pr.milestones || []);
+      try {
+        document.getElementById("milestonesJson").value = JSON.stringify(proj.milestones || [], null, 2);
+      } catch (_) {
+        document.getElementById("milestonesJson").value = "[]";
+      }
+      renderStatusActions(pr.project_status);
+
+      const tb = document.getElementById("ganttBody");
+      tb.innerHTML = "";
+      (gg.tasks || []).forEach(t => {
+        const tr = document.createElement("tr");
+        const pct = Math.min(100, Math.max(0, Number(t.progress) || 0));
+        const bar = `<div class="gbar"><div class="gfill" style="width:${pct}%"></div></div><span class="mono">${pct}%</span>`;
+        tr.innerHTML = `<td>${escapeHtml(t.name)}</td><td>${escapeHtml(t.start_date || "—")}</td><td>${escapeHtml(t.end_date || "—")}</td><td>${bar}</td><td>${escapeHtml(t.status)}</td>`;
+        tb.appendChild(tr);
+      });
+
+      renderDisc(dc.items || []);
+
+      const teamTb = document.getElementById("teamBody");
+      teamTb.innerHTML = "";
+      const titems = tm.items || [];
+      if (!titems.length) {
+        const tr0 = document.createElement("tr");
+        tr0.innerHTML = "<td colspan=\"4\"><span class=\"meta\">暂无带指派的任务</span></td>";
+        teamTb.appendChild(tr0);
+      } else {
+        titems.forEach(row => {
+          const tr = document.createElement("tr");
+          const names = (row.matched_agent_names || []).join("、") || "—";
+          tr.innerHTML =
+            "<td>" +
+            escapeHtml(row.assignee_level || "—") +
+            "</td><td>" +
+            escapeHtml(row.assignee_role || "—") +
+            "</td><td>" +
+            escapeHtml(String(row.task_count)) +
+            "</td><td>" +
+            escapeHtml(names) +
+            "</td>";
+          teamTb.appendChild(tr);
+        });
+      }
+
+      document.getElementById("retroBody").value = proj.retrospective_report != null ? String(proj.retrospective_report) : "";
+
+      const treeEl = document.getElementById("taskTree");
+      treeEl.textContent = "";
+      const ul = document.createElement("ul");
+      ul.className = "tree";
+      const flat = tk.items || [];
+      renderTasks(buildTaskTree(flat), ul);
+      treeEl.appendChild(ul);
+
+      window.__reloadProject = loadAll;
+    }
+
+    async function doApply(dry) {
+      const out = document.getElementById("applyOut");
+      const instruction = document.getElementById("instr").value.trim();
+      if (!instruction) { out.textContent = "请填写指令"; return; }
+      out.textContent = "请求中…";
+      const r = await jyisApiFetch(API + "/ceo/planning/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          instruction,
+          project_id: PROJECT_ID,
+          environment: "dev",
+          law: LAW,
+          dry_run: dry,
+        }),
+      });
+      const txt = await r.text();
+      try {
+        out.textContent = JSON.stringify(JSON.parse(txt), null, 2);
+      } catch {
+        out.textContent = txt;
+      }
+      if (r.ok && !dry && window.__reloadProject) await window.__reloadProject();
+    }
+
+    function renderDisc(items) {
+      const box = document.getElementById("discList");
+      box.innerHTML = "";
+      if (!items.length) {
+        box.innerHTML = "<span class='meta'>暂无讨论</span>";
+        return;
+      }
+      items.forEach(d => {
+        const div = document.createElement("div");
+        div.className = "disc-item";
+        div.innerHTML =
+          "<div class='disc-meta'><strong>" +
+          escapeHtml(d.author) +
+          "</strong> · <small>" +
+          escapeHtml(d.created_at) +
+          "</small></div><div>" +
+          escapeHtml(d.body).replace(/\n/g, "<br/>") +
+          "</div>";
+        box.appendChild(div);
+      });
+    }
+
+    async function postDisc() {
+      if (!PROJECT_ID) return;
+      const body = document.getElementById("discBody").value.trim();
+      if (!body) return;
+      const author = document.getElementById("discAuthor").value.trim() || "anonymous";
+      const r = await jyisApiFetch(API + "/projects/" + encodeURIComponent(PROJECT_ID) + "/discussion", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ body, author }),
+      });
+      if (!r.ok) {
+        alert("发送失败 " + r.status);
+        return;
+      }
+      document.getElementById("discBody").value = "";
+      const dc = await jyisApiFetch(API + "/projects/" + encodeURIComponent(PROJECT_ID) + "/discussion").then(x => x.json());
+      renderDisc(dc.items || []);
+    }
+
+    document.getElementById("btnApply").addEventListener("click", () => doApply(false));
+    document.getElementById("btnDry").addEventListener("click", () => doApply(true));
+    document.getElementById("btnDisc").addEventListener("click", postDisc);
+
+    document.getElementById("btnSubmitAppr").addEventListener("click", async () => {
+      if (!PROJECT_ID) return;
+      const raw = document.getElementById("apprChainIn").value.trim() || "L3,L2,L1";
+      const approval_chain = raw
+        .split(/[,，\s]+/)
+        .map(s => s.trim())
+        .filter(Boolean);
+      const r = await jyisApiFetch(API + "/projects/" + encodeURIComponent(PROJECT_ID) + "/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ approval_chain }),
+      });
+      if (!r.ok) {
+        alert("提交失败 " + r.status + " " + (await r.text()).slice(0, 200));
+        return;
+      }
+      await loadAll();
+    });
+
+    document.getElementById("btnAppr").addEventListener("click", async () => {
+      if (!PROJECT_ID) return;
+      const level = document.getElementById("btnAppr").getAttribute("data-level");
+      if (!level) return;
+      const r = await jyisApiFetch(API + "/projects/" + encodeURIComponent(PROJECT_ID) + "/approve", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ level }),
+      });
+      if (!r.ok) {
+        alert("审批失败 " + r.status + " " + (await r.text()).slice(0, 200));
+        return;
+      }
+      await loadAll();
+    });
+
+    document.getElementById("sec-statusflow").addEventListener("click", async ev => {
+      const btn = ev.target && ev.target.closest ? ev.target.closest("[data-status-action]") : null;
+      if (!(btn instanceof HTMLElement) || !PROJECT_ID) return;
+      const next = btn.getAttribute("data-status-action");
+      if (!next) return;
+      const r = await jyisApiFetch(API + "/projects/" + encodeURIComponent(PROJECT_ID) + "/status", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: next }),
+      });
+      if (!r.ok) {
+        alert("状态更新失败 " + r.status + " " + (await r.text()).slice(0, 240));
+        return;
+      }
+      await loadAll();
+    });
+
+    document.getElementById("btnRej").addEventListener("click", async () => {
+      if (!PROJECT_ID) return;
+      const level = document.getElementById("btnRej").getAttribute("data-level");
+      if (!level) return;
+      const reason = window.prompt("驳回理由（必填）");
+      if (!reason || !String(reason).trim()) return;
+      const r = await jyisApiFetch(API + "/projects/" + encodeURIComponent(PROJECT_ID) + "/reject", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ level, reason: String(reason).trim() }),
+      });
+      if (!r.ok) {
+        alert("驳回失败 " + r.status + " " + (await r.text()).slice(0, 200));
+        return;
+      }
+      await loadAll();
+    });
+
+    document.getElementById("btnSaveMilestones").addEventListener("click", async () => {
+      if (!PROJECT_ID) return;
+      let milestones;
+      try {
+        milestones = JSON.parse(document.getElementById("milestonesJson").value);
+      } catch (e) {
+        alert("JSON 解析失败：" + e);
+        return;
+      }
+      if (!Array.isArray(milestones)) {
+        alert("milestones 须为 JSON 数组");
+        return;
+      }
+      const r = await jyisApiFetch(API + "/projects/" + encodeURIComponent(PROJECT_ID), {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ milestones }),
+      });
+      if (!r.ok) {
+        alert("保存失败 " + r.status + " " + (await r.text()).slice(0, 240));
+        return;
+      }
+      await loadAll();
+    });
+
+    document.getElementById("btnRetro").addEventListener("click", async () => {
+      if (!PROJECT_ID) return;
+      const retrospective_report = document.getElementById("retroBody").value;
+      const r = await jyisApiFetch(API + "/projects/" + encodeURIComponent(PROJECT_ID), {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ retrospective_report }),
+      });
+      if (!r.ok) {
+        alert("保存失败 " + r.status);
+        return;
+      }
+      const updated = await r.json();
+      document.getElementById("retroBody").value =
+        updated.retrospective_report != null ? String(updated.retrospective_report) : "";
+      document.getElementById("proj").textContent = JSON.stringify(updated, null, 2);
+    });
+
+    (async () => {
+      const ub = typeof jyisInitUserBar === "function" ? jyisInitUserBar({ apiBase: API }) : null;
+      if (ub && ub.refresh) await ub.refresh();
+      await loadAll();
+    })();
+  </script>
+</body>
+</html>

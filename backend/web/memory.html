@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>工作记忆 · 纪光元生</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --panel: #1a2332;
+      --text: #e6edf3;
+      --muted: #8b9cb3;
+      --accent: #3d8bfd;
+      --border: #30363d;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); }
+    header {
+      padding: 0.85rem 1.25rem; border-bottom: 1px solid var(--border);
+      display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0.75rem; justify-content: space-between;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    main { max-width: 720px; margin: 0 auto; padding: 1rem; display: flex; flex-direction: column; gap: 1rem; }
+    section {
+      background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 1rem;
+    }
+    h1 { margin: 0; font-size: 1.1rem; }
+    h2 { margin: 0 0 0.6rem; font-size: 0.85rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    .meta { font-size: 0.8rem; color: var(--muted); }
+    .pill { font-size: 0.75rem; padding: 0.15rem 0.45rem; border-radius: 999px; background: #21262d; color: var(--muted); }
+    .row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+    .mono { font-family: ui-monospace, monospace; font-size: 0.78rem; }
+    textarea {
+      width: 100%; min-height: 72px; background: #0d1117; border: 1px solid var(--border); color: var(--text);
+      border-radius: 6px; padding: 0.5rem; margin-top: 0.35rem; resize: vertical;
+    }
+    select {
+      background: #0d1117; border: 1px solid var(--border); color: var(--text);
+      border-radius: 6px; padding: 0.45rem 0.55rem; font-size: 0.85rem; min-width: 220px;
+    }
+    button {
+      background: var(--accent); color: #fff; border: none; padding: 0.45rem 0.85rem;
+      border-radius: 6px; cursor: pointer; font-size: 0.85rem;
+    }
+    button.secondary { background: #30363d; }
+    .wm-item { border-bottom: 1px solid var(--border); padding: 0.55rem 0; font-size: 0.88rem; }
+    .wm-meta { color: var(--muted); font-size: 0.75rem; margin-bottom: 0.25rem; }
+    .err { color: #f85149; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <div class="row">
+        <a href="/ui/">← 工作台</a>
+        <a href="/ui/agents.html">智能体</a>
+        <a href="/ui/collab.html">协作委托</a>
+        <a href="/ui/marketing.html">营销中心</a>
+        <a href="/ui/skills.html">技能库</a>
+        <a href="/ui/tasks.html">任务看板</a>
+        <a href="/ui/chat.html">对话会话</a>
+      </div>
+      <h1 style="margin-top:0.4rem">工作记忆 <span class="pill">PH3-T03 · UI</span></h1>
+    </div>
+    <div class="meta mono" style="text-align:right;max-width:22rem">
+      <div id="userBar">—</div>
+      <div style="margin-top:0.35rem">
+        <a href="/docs" target="_blank" rel="noopener noreferrer">Swagger</a>
+        · <a href="/redoc" target="_blank" rel="noopener noreferrer">ReDoc</a>
+      </div>
+    </div>
+  </header>
+  <main>
+    <section>
+      <h2>选择智能体</h2>
+      <p class="meta">列表与追加对接 <code>GET/POST /api/v1/agents/{id}/memory/working</code>。</p>
+      <div class="row">
+        <select id="agentPick" aria-label="智能体"></select>
+        <button type="button" class="secondary" id="btnRefresh">刷新列表</button>
+      </div>
+    </section>
+    <section>
+      <h2>追加一条</h2>
+      <textarea id="wmIn" placeholder="输入工作记忆内容…"></textarea>
+      <button type="button" id="btnAppend" style="margin-top:0.5rem">追加</button>
+      <p class="meta" id="wmMsg" style="margin-top:0.5rem"></p>
+    </section>
+    <section>
+      <h2>历史记录</h2>
+      <div id="wmList" class="mono">请先选择智能体并刷新。</div>
+    </section>
+  </main>
+  <script src="api-client.js"></script>
+  <script>
+    const API = "/api/v1";
+
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    async function loadAgentOptions() {
+      const sel = document.getElementById("agentPick");
+      try {
+        const r = await jyisApiFetch(API + "/agents?limit=200");
+        if (!r.ok) throw new Error(String(r.status));
+        const data = await r.json();
+        const items = Array.isArray(data.items) ? data.items : [];
+        sel.innerHTML = items
+          .map(
+            a =>
+              "<option value=\"" +
+              escapeHtml(a.id) +
+              "\">" +
+              escapeHtml(a.id) +
+              " · " +
+              escapeHtml(a.name || "") +
+              "</option>"
+          )
+          .join("");
+        if (!items.length) sel.innerHTML = "<option value=\"\">（无智能体）</option>";
+      } catch (e) {
+        sel.innerHTML = "<option value=\"\">加载失败</option>";
+      }
+    }
+
+    function currentAgentId() {
+      const v = document.getElementById("agentPick").value.trim();
+      return v || null;
+    }
+
+    async function loadWorking() {
+      const el = document.getElementById("wmList");
+      const aid = currentAgentId();
+      if (!aid) {
+        el.textContent = "无可用智能体。";
+        return;
+      }
+      el.textContent = "加载中…";
+      try {
+        const r = await jyisApiFetch(API + "/agents/" + encodeURIComponent(aid) + "/memory/working?limit=50");
+        if (!r.ok) throw new Error(String(r.status));
+        const data = await r.json();
+        const items = Array.isArray(data.items) ? data.items : [];
+        if (!items.length) {
+          el.textContent = "暂无记录";
+          return;
+        }
+        el.innerHTML = items
+          .map(
+            m =>
+              "<div class=\"wm-item\"><div class=\"wm-meta mono\">" +
+              escapeHtml(m.id || "") +
+              " · " +
+              escapeHtml(m.created_at || "") +
+              "</div>" +
+              escapeHtml(m.content || "") +
+              "</div>"
+          )
+          .join("");
+      } catch (e) {
+        el.innerHTML = "<span class=\"err\">" + escapeHtml(String(e)) + "</span>";
+      }
+    }
+
+    document.getElementById("btnRefresh").addEventListener("click", () => loadWorking());
+    document.getElementById("agentPick").addEventListener("change", () => loadWorking());
+
+    document.getElementById("btnAppend").addEventListener("click", async () => {
+      const msg = document.getElementById("wmMsg");
+      msg.textContent = "";
+      const aid = currentAgentId();
+      if (!aid) {
+        msg.textContent = "请选择智能体";
+        msg.className = "meta err";
+        return;
+      }
+      const content = document.getElementById("wmIn").value.trim();
+      if (!content) {
+        msg.textContent = "请填写内容";
+        msg.className = "meta err";
+        return;
+      }
+      try {
+        const r = await jyisApiFetch(API + "/agents/" + encodeURIComponent(aid) + "/memory/working", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content }),
+        });
+        if (!r.ok) {
+          msg.textContent = "失败 " + r.status + " " + (await r.text()).slice(0, 200);
+          msg.className = "meta err";
+          return;
+        }
+        document.getElementById("wmIn").value = "";
+        msg.textContent = "已追加";
+        msg.className = "meta";
+        await loadWorking();
+      } catch (e) {
+        msg.textContent = String(e);
+        msg.className = "meta err";
+      }
+    });
+
+    (async () => {
+      const ub = typeof jyisInitUserBar === "function" ? jyisInitUserBar({ apiBase: API }) : null;
+      if (ub && ub.refresh) await ub.refresh();
+      await loadAgentOptions();
+      await loadWorking();
+    })();
+  </script>
+</body>
+</html>

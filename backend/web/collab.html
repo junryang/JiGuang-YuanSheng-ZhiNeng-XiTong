@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>协作委托 · JYIS</title>
+  <style>
+    body { margin: 0; font-family: system-ui, sans-serif; background: #0f1419; color: #e6edf3; }
+    .wrap { max-width: 900px; margin: 0 auto; padding: 1rem; }
+    .card { background: #1a2332; border: 1px solid #30363d; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; }
+    h1 { margin: 0 0 0.5rem; font-size: 1.15rem; }
+    h2 { margin: 0 0 0.6rem; font-size: 0.85rem; color: #8b9cb3; text-transform: uppercase; letter-spacing: 0.05em; }
+    .meta { font-size: 0.82rem; color: #8b9cb3; }
+    .mono { font-family: ui-monospace, monospace; }
+    .err { color: #f85149; }
+    a { color: #3d8bfd; text-decoration: none; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    th, td { border: 1px solid #30363d; padding: 0.35rem 0.5rem; text-align: left; }
+    th { background: #0d1117; color: #8b9cb3; }
+    button, input, select { font: inherit; }
+    button { background: #3d8bfd; color: #fff; border: none; padding: 0.45rem 0.85rem; border-radius: 6px; cursor: pointer; }
+    button.secondary { background: #30363d; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    @media (max-width: 640px) { .grid2 { grid-template-columns: 1fr; } }
+    .full { grid-column: 1 / -1; }
+    label { display: block; font-size: 0.85rem; color: #8b9cb3; }
+    input, select { width: 100%; box-sizing: border-box; margin-top: 0.25rem; padding: 0.4rem 0.5rem; border-radius: 6px; border: 1px solid #30363d; background: #0d1117; color: #e6edf3; }
+    .small { font-size: 0.8rem; }
+    .dlg-act { white-space: nowrap; }
+    button.dlg-st { font-size: 0.72rem; padding: 0.2rem 0.45rem; margin: 0.08rem; }
+    button.dlg-del { font-size: 0.72rem; padding: 0.2rem 0.45rem; margin: 0.08rem 0 0.08rem 0.25rem; background: #6e1414; color: #fff; }
+    .dlg-id { cursor: pointer; color: #58a6ff; text-decoration: underline; }
+    #dlgDetail { margin-top: 0.75rem; max-height: 220px; overflow: auto; padding: 0.5rem; background: #0d1117; border-radius: 6px; border: 1px solid #30363d; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>协作委托</h1>
+      <p class="meta mono">
+        <a href="/ui/index.html">工作台</a>
+        · <a href="/ui/agents.html">智能体</a>
+        · <a href="/ui/marketing.html">营销中心</a>
+        · <a href="/ui/skills.html">技能库</a>
+        · <a href="/ui/memory.html">工作记忆</a>
+        · <a href="/ui/tasks.html">任务看板</a>
+        · <a href="/ui/chat.html">对话会话</a>
+        · <a href="/docs">Swagger</a>
+        · <a href="/redoc">ReDoc</a>
+        · <a href="/ui/login.html">登录</a>
+      </p>
+      <p class="meta mono" id="userBar" style="margin-top:0.35rem">—</p>
+      <p class="meta">智能体委托：<code>POST …/delegations</code> 创建（需附带契约 contract：验收标准 + 交付物）；<code>GET …/delegations/{id}</code> 单条；<code>PATCH …/delegations/{id}</code> 更新 <code>status</code>；<code>DELETE …/delegations/{id}</code> 删除。成功写操作会记入 <code>GET /api/v1/audit/events</code>（<code>delegation.create</code> / <code>delegation.patch</code> / <code>delegation.delete</code>）。请求经 <code>jyisApiFetch</code>。</p>
+    </div>
+
+    <div class="card">
+      <h2>新建委托</h2>
+      <form id="fCreate" class="grid2">
+        <label>发出方智能体
+          <select name="from_agent_id" id="selFrom" required></select>
+        </label>
+        <label>接收方智能体
+          <select name="to_agent_id" id="selTo" required></select>
+        </label>
+        <label class="full">目标 / 说明 <input name="objective" required placeholder="例如：协调 D02 资源" /></label>
+        <label class="full">契约-验收标准 <input name="acceptance_criteria" required placeholder="例如：在截止日前完成联调并通过回归" /></label>
+        <label class="full">契约-交付物（每行一项） <textarea name="deliverables" required style="margin-top:0.25rem;min-height:72px" placeholder="联调说明文档&#10;回归测试报告"></textarea></label>
+        <label>契约-截止日期（可选） <input name="due_date" placeholder="2026-04-20" /></label>
+        <label>关联项目 ID（可选） <input name="project_id" placeholder="proj-xxx" /></label>
+        <label>状态
+          <select name="status">
+            <option value="open">open</option>
+            <option value="accepted">accepted</option>
+            <option value="done">done</option>
+          </select>
+        </label>
+        <div class="full"><button type="submit">创建</button> <span id="createMsg" class="meta"></span></div>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>委托列表</h2>
+      <p class="meta mono">
+        <button type="button" class="secondary" id="btnRefresh">刷新</button>
+        · 筛选 from <input id="fltFrom" class="mono" style="width:10rem" placeholder="agent id" />
+        · to <input id="fltTo" class="mono" style="width:10rem" placeholder="agent id" />
+        <button type="button" class="secondary" id="btnApplyFlt">应用</button>
+      </p>
+      <div id="list" class="mono small">加载中…</div>
+      <p class="meta" style="margin:0.5rem 0 0">点击列表中的 <strong>ID</strong> 加载单条 JSON（<code>GET …/delegations/{id}</code>）。</p>
+      <pre id="dlgDetail" class="mono small">—</pre>
+    </div>
+  </div>
+  <script src="/ui/api-client.js"></script>
+  <script>
+    const API = "/api/v1";
+
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    async function loadAgents() {
+      const r = await jyisApiFetch(API + "/agents");
+      if (!r.ok) throw new Error(String(r.status));
+      const data = await r.json();
+      return Array.isArray(data.items) ? data.items : [];
+    }
+
+    function fillAgentSelects(agents) {
+      const from = document.getElementById("selFrom");
+      const to = document.getElementById("selTo");
+      const opts = agents
+        .map(a => "<option value=\"" + escapeHtml(a.id) + "\">" + escapeHtml(a.id) + " · " + escapeHtml(a.name || "") + "</option>")
+        .join("");
+      from.innerHTML = opts;
+      to.innerHTML = opts;
+      if (agents.length >= 2) to.selectedIndex = 1;
+    }
+
+    async function loadList() {
+      const el = document.getElementById("list");
+      el.textContent = "加载中…";
+      const fp = new URLSearchParams();
+      const ff = document.getElementById("fltFrom").value.trim();
+      const ft = document.getElementById("fltTo").value.trim();
+      if (ff) fp.set("from_agent_id", ff);
+      if (ft) fp.set("to_agent_id", ft);
+      const q = fp.toString();
+      try {
+        const r = await jyisApiFetch(API + "/collaboration/delegations" + (q ? "?" + q : ""));
+        if (!r.ok) throw new Error(String(r.status));
+        const data = await r.json();
+        const items = Array.isArray(data.items) ? data.items : [];
+        if (!items.length) {
+          el.textContent = "暂无委托";
+          return;
+        }
+        el.innerHTML =
+          "<table class=\"table\"><thead><tr><th>ID</th><th>发出</th><th>接收</th><th>目标</th><th>项目</th><th>状态</th><th>创建时间</th><th>操作</th></tr></thead><tbody>" +
+          items
+            .map(
+              d =>
+                "<tr><td class=\"mono\"><span class=\"dlg-id\" data-did=\"" +
+                escapeHtml(d.id || "") +
+                "\">" +
+                escapeHtml(d.id || "") +
+                "</span></td><td class=\"mono\">" +
+                escapeHtml(d.from_agent_id || "") +
+                "</td><td class=\"mono\">" +
+                escapeHtml(d.to_agent_id || "") +
+                "</td><td>" +
+                escapeHtml(d.objective || "") +
+                "</td><td class=\"mono\">" +
+                escapeHtml(d.project_id || "—") +
+                "</td><td>" +
+                escapeHtml(d.status || "") +
+                "</td><td class=\"mono\">" +
+                escapeHtml(d.created_at || "") +
+                "</td><td class=\"dlg-act\">" +
+                ["open", "accepted", "done"]
+                  .map(
+                    st =>
+                      "<button type=\"button\" class=\"secondary dlg-st\" data-did=\"" +
+                      escapeHtml(d.id || "") +
+                      "\" data-st=\"" +
+                      st +
+                      "\">" +
+                      st +
+                      "</button>"
+                  )
+                  .join("") +
+                "<button type=\"button\" class=\"dlg-del\" data-did=\"" +
+                escapeHtml(d.id || "") +
+                "\">删除</button>" +
+                "</td></tr>"
+            )
+            .join("") +
+          "</tbody></table>";
+      } catch (e) {
+        el.innerHTML = "<span class=\"err\">加载失败</span>";
+      }
+    }
+
+    document.getElementById("btnRefresh").addEventListener("click", () => loadList());
+    document.getElementById("btnApplyFlt").addEventListener("click", () => loadList());
+
+    document.getElementById("list").addEventListener("click", async ev => {
+      const t = ev.target;
+      if (!t || t.nodeType !== 1) return;
+      if (t.classList.contains("dlg-id")) {
+        const id = t.getAttribute("data-did");
+        if (!id) return;
+        const pre = document.getElementById("dlgDetail");
+        pre.textContent = "加载中…";
+        try {
+          const r = await jyisApiFetch(API + "/collaboration/delegations/" + encodeURIComponent(id));
+          if (!r.ok) {
+            pre.textContent = "错误 " + r.status + " " + (await r.text()).slice(0, 400);
+            return;
+          }
+          const j = await r.json();
+          pre.textContent = JSON.stringify(j, null, 2);
+        } catch (e) {
+          pre.textContent = String(e);
+        }
+        return;
+      }
+      if (t.classList.contains("dlg-del")) {
+        const id = t.getAttribute("data-did");
+        if (!id || !confirm("确定删除该委托？不可恢复。")) return;
+        try {
+          const r = await jyisApiFetch(API + "/collaboration/delegations/" + encodeURIComponent(id), {
+            method: "DELETE",
+          });
+          if (!r.ok) {
+            alert("删除失败 " + r.status + " " + (await r.text()).slice(0, 200));
+            return;
+          }
+          document.getElementById("dlgDetail").textContent = "—";
+          await loadList();
+        } catch (e) {
+          alert(String(e));
+        }
+        return;
+      }
+      if (!t.classList.contains("dlg-st")) return;
+      const id = t.getAttribute("data-did");
+      const st = t.getAttribute("data-st");
+      if (!id || !st) return;
+      try {
+        const r = await jyisApiFetch(API + "/collaboration/delegations/" + encodeURIComponent(id), {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: st }),
+        });
+        if (!r.ok) {
+          alert("更新失败 " + r.status + " " + (await r.text()).slice(0, 200));
+          return;
+        }
+        await loadList();
+      } catch (e) {
+        alert(String(e));
+      }
+    });
+
+    document.getElementById("fCreate").addEventListener("submit", async ev => {
+      ev.preventDefault();
+      const msg = document.getElementById("createMsg");
+      msg.textContent = "";
+      msg.className = "meta";
+      const fd = new FormData(ev.target);
+      const pid = String(fd.get("project_id") || "").trim();
+      const acceptance = String(fd.get("acceptance_criteria") || "").trim();
+      const deliverables = String(fd.get("deliverables") || "")
+        .split(/\r?\n/)
+        .map(s => s.trim())
+        .filter(Boolean);
+      const dueDate = String(fd.get("due_date") || "").trim();
+      if (!acceptance || !deliverables.length) {
+        msg.textContent = "请填写契约验收标准与至少一项交付物";
+        msg.className = "meta err";
+        return;
+      }
+      const body = {
+        from_agent_id: String(fd.get("from_agent_id") || "").trim(),
+        to_agent_id: String(fd.get("to_agent_id") || "").trim(),
+        objective: String(fd.get("objective") || "").trim(),
+        contract: {
+          acceptance_criteria: acceptance,
+          deliverables,
+          due_date: dueDate || null,
+        },
+        project_id: pid || null,
+        status: String(fd.get("status") || "open"),
+      };
+      try {
+        const r = await jyisApiFetch(API + "/collaboration/delegations", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        if (!r.ok) {
+          const t = await r.text();
+          throw new Error(t || String(r.status));
+        }
+        msg.textContent = "已创建";
+        ev.target.querySelector('[name="objective"]').value = "";
+        ev.target.querySelector('[name="acceptance_criteria"]').value = "";
+        ev.target.querySelector('[name="deliverables"]').value = "";
+        ev.target.querySelector('[name="due_date"]').value = "";
+        ev.target.querySelector('[name="project_id"]').value = "";
+        await loadList();
+      } catch (e) {
+        msg.textContent = "失败（检查智能体 ID 与项目是否存在）";
+        msg.className = "meta err";
+      }
+    });
+
+    (async () => {
+      const ub = typeof jyisInitUserBar === "function" ? jyisInitUserBar({ apiBase: API }) : null;
+      if (ub && ub.refresh) await ub.refresh();
+      try {
+        const agents = await loadAgents();
+        fillAgentSelects(agents);
+      } catch (_) {
+        document.getElementById("selFrom").innerHTML = "";
+        document.getElementById("selTo").innerHTML = "";
+      }
+      await loadList();
+    })();
+  </script>
+</body>
+</html>

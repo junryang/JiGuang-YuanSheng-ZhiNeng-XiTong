@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>营销中心 · 纪光元生</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --panel: #1a2332;
+      --text: #e6edf3;
+      --muted: #8b9cb3;
+      --accent: #3d8bfd;
+      --border: #30363d;
+      --ok: #3fb950;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); }
+    header {
+      padding: 0.85rem 1.25rem; border-bottom: 1px solid var(--border);
+      display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; justify-content: space-between;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    main { max-width: 1100px; margin: 0 auto; padding: 1rem; display: flex; flex-direction: column; gap: 1rem; }
+    section {
+      background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 1rem;
+    }
+    h2 { margin: 0 0 0.6rem; font-size: 0.85rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    h1 { margin: 0; font-size: 1.15rem; }
+    .meta { font-size: 0.8rem; color: var(--muted); }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.5rem; }
+    .card {
+      background: #0d1117; border: 1px solid var(--border); border-radius: 8px; padding: 0.65rem 0.75rem;
+    }
+    .card k { display: block; font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    .card v { font-size: 1.1rem; font-weight: 600; margin-top: 0.2rem; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    th, td { border: 1px solid var(--border); padding: 0.35rem 0.5rem; text-align: left; }
+    th { background: #0d1117; color: var(--muted); }
+    textarea, input[type="text"] {
+      width: 100%; background: #0d1117; border: 1px solid var(--border); color: var(--text);
+      border-radius: 6px; padding: 0.5rem; margin: 0.35rem 0;
+    }
+    textarea { min-height: 100px; resize: vertical; }
+    select {
+      background: #0d1117; border: 1px solid var(--border); color: var(--text);
+      border-radius: 6px; padding: 0.45rem 0.5rem; font-size: 0.85rem;
+    }
+    button {
+      background: var(--accent); color: #fff; border: none; padding: 0.45rem 0.85rem;
+      border-radius: 6px; cursor: pointer; font-size: 0.85rem;
+    }
+    button.secondary { background: #30363d; }
+    .row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+    .pill { font-size: 0.75rem; padding: 0.15rem 0.45rem; border-radius: 999px; background: #21262d; color: var(--muted); }
+    .err { color: #f85149; }
+    .mono { font-family: ui-monospace, monospace; font-size: 0.78rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="row">
+      <a href="/ui/">← 工作台</a>
+      <span class="meta">· <a href="/ui/agents.html">智能体</a> · <a href="/ui/collab.html">协作委托</a> · <a href="/ui/skills.html">技能库</a> · <a href="/ui/memory.html">工作记忆</a> · <a href="/ui/tasks.html">任务看板</a> · <a href="/ui/chat.html">对话会话</a></span>
+      <h1>营销中心 <span class="pill">PH4-T04</span></h1>
+    </div>
+    <div style="text-align:right;max-width:28rem">
+      <div class="meta mono" id="userBar">—</div>
+      <div class="meta mono" id="dashHint" style="margin-top:0.35rem">看板与内容 · JSON 存储</div>
+    </div>
+  </header>
+  <main>
+    <section>
+      <h2>数据看板</h2>
+      <p class="meta">指标可 <code>PATCH /api/v1/marketing/metrics</code> 更新；以下为当前快照。</p>
+      <div class="cards" id="metricCards"></div>
+    </section>
+    <section>
+      <h2>合规发布记录</h2>
+      <p class="meta">经 <code>POST …/marketing/contents/{id}/publish</code> 且通过 CEO-POLICY-13/14 的记录（与全站发布策略对齐）。</p>
+      <ul id="recentPub" class="mono" style="font-size:0.82rem;margin:0;padding-left:1.15rem;line-height:1.5"></ul>
+    </section>
+    <section>
+      <h2>内容管理</h2>
+      <p class="meta">创建草稿、编辑、标记已发布；多平台以英文标签存储（如 wechat、weibo、xhs）。</p>
+      <div class="row" style="margin-bottom:0.5rem">
+        <input type="text" id="newTitle" placeholder="标题" style="max-width:320px;flex:1" />
+        <input type="text" id="newPlats" placeholder="平台标签，逗号分隔" style="max-width:260px;flex:1" />
+        <button type="button" id="btnCreate">新建草稿</button>
+      </div>
+      <textarea id="newBody" placeholder="正文（可选）"></textarea>
+      <div style="overflow:auto">
+        <table>
+          <thead><tr><th>标题</th><th>状态</th><th>平台</th><th>操作</th></tr></thead>
+          <tbody id="contentBody"></tbody>
+        </table>
+      </div>
+    </section>
+    <section id="editPanel" style="display:none">
+      <h2>编辑 · <span id="editId" class="mono"></span></h2>
+      <input type="text" id="editTitle" />
+      <textarea id="editBody"></textarea>
+      <input type="text" id="editPlats" placeholder="平台，逗号分隔" />
+      <div class="row">
+        <button type="button" id="btnSave">保存</button>
+        <button type="button" class="secondary" id="btnPub">标为已发布</button>
+        <button type="button" class="secondary" id="btnAi">AI 生成初稿</button>
+      </div>
+      <input type="text" id="aiHint" placeholder="AI 写作要点（可选）" style="margin-top:0.5rem" />
+      <pre id="aiOut" class="mono" style="margin-top:0.5rem;max-height:160px;overflow:auto;background:#0d1117;padding:0.5rem;border-radius:6px;border:1px solid var(--border)">—</pre>
+      <p class="meta" style="margin-top:0.75rem">策略门控外发（默认五条 LAW；prod 须勾选已批准）</p>
+      <div class="row" style="margin-top:0.35rem">
+        <label class="meta">环境
+          <select id="pubEnv">
+            <option value="dev">dev</option>
+            <option value="staging">staging</option>
+            <option value="prod">prod</option>
+          </select>
+        </label>
+        <label class="meta"><input type="checkbox" id="pubAppr" /> prod 已书面批准</label>
+        <button type="button" class="secondary" id="btnPubPolicy">策略门控发布</button>
+      </div>
+    </section>
+  </main>
+  <script src="api-client.js"></script>
+  <script>
+    const API = "/api/v1";
+    const PUBLISH_LAW = ["LAW-01", "LAW-02", "LAW-03", "LAW-04", "LAW-05"];
+
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function parsePlats(s) {
+      return String(s || "")
+        .split(/[,，\s]+/)
+        .map(x => x.trim())
+        .filter(Boolean);
+    }
+
+    let currentId = null;
+
+    async function loadDashboard() {
+      const d = await jyisApiFetch(API + "/marketing/dashboard").then(r => r.json());
+      const m = d.metrics || {};
+      const box = document.getElementById("metricCards");
+      box.innerHTML = "";
+      const rows = [
+        ["7日粉丝净增", m.fans_growth_7d],
+        ["互动率 %", m.engagement_rate_pct],
+        ["7日触达", m.reach_7d],
+        ["7日发布数", m.posts_published_7d],
+        ["内容总数", d.contents_total],
+        ["已发布", d.contents_published],
+        ["草稿", d.contents_draft],
+        ["排期", d.contents_scheduled],
+      ];
+      rows.forEach(([k, v]) => {
+        const el = document.createElement("div");
+        el.className = "card";
+        el.innerHTML = "<k>" + escapeHtml(k) + "</k><v>" + escapeHtml(String(v ?? "—")) + "</v>";
+        box.appendChild(el);
+      });
+      const ul = document.getElementById("recentPub");
+      ul.innerHTML = "";
+      const evs = d.recent_publishes || [];
+      if (!evs.length) {
+        const li = document.createElement("li");
+        li.className = "meta";
+        li.textContent = "暂无发布记录";
+        ul.appendChild(li);
+      } else {
+        evs.forEach(ev => {
+          const li = document.createElement("li");
+          li.textContent =
+            (ev.created_at || "") +
+            " · " +
+            (ev.title || "") +
+            " · " +
+            (ev.environment || "") +
+            " · " +
+            (ev.content_id || "");
+          ul.appendChild(li);
+        });
+      }
+    }
+
+    async function loadContents() {
+      const r = await jyisApiFetch(API + "/marketing/contents?limit=50").then(x => x.json());
+      const tb = document.getElementById("contentBody");
+      tb.innerHTML = "";
+      (r.items || []).forEach(c => {
+        const tr = document.createElement("tr");
+        const pl = (c.platforms || []).join(", ");
+        tr.innerHTML =
+          "<td>" +
+          escapeHtml(c.title) +
+          "</td><td>" +
+          escapeHtml(c.status) +
+          "</td><td class=\"mono\">" +
+          escapeHtml(pl) +
+          "</td><td><button type=\"button\" class=\"secondary btn-edit\" data-id=\"" +
+          escapeHtml(c.id) +
+          "\">编辑</button></td>";
+        tb.appendChild(tr);
+      });
+      tb.querySelectorAll(".btn-edit").forEach(b => {
+        b.addEventListener("click", () => openEdit(b.getAttribute("data-id")));
+      });
+      if (!(r.items || []).length) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = "<td colspan=\"4\" class=\"meta\">暂无内容，请先新建草稿</td>";
+        tb.appendChild(tr);
+      }
+    }
+
+    async function openEdit(id) {
+      currentId = id;
+      const c = await jyisApiFetch(API + "/marketing/contents/" + encodeURIComponent(id)).then(r => r.json());
+      document.getElementById("editPanel").style.display = "block";
+      document.getElementById("editId").textContent = id;
+      document.getElementById("editTitle").value = c.title || "";
+      document.getElementById("editBody").value = c.body || "";
+      document.getElementById("editPlats").value = (c.platforms || []).join(", ");
+      document.getElementById("aiOut").textContent = "—";
+    }
+
+    async function saveEdit(status) {
+      if (!currentId) return;
+      const body = {
+        title: document.getElementById("editTitle").value.trim(),
+        body: document.getElementById("editBody").value,
+        platforms: parsePlats(document.getElementById("editPlats").value),
+      };
+      if (status) body.status = status;
+      const r = await jyisApiFetch(API + "/marketing/contents/" + encodeURIComponent(currentId), {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!r.ok) {
+        alert("保存失败 " + r.status);
+        return;
+      }
+      await loadDashboard();
+      await loadContents();
+    }
+
+    async function runAi() {
+      if (!currentId) return;
+      document.getElementById("aiOut").textContent = "生成中…";
+      const hint = document.getElementById("aiHint").value.trim();
+      const r = await jyisApiFetch(
+        API + "/marketing/contents/" + encodeURIComponent(currentId) + "/ai-draft",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ hint }),
+        },
+      );
+      const t = await r.text();
+      let j;
+      try {
+        j = JSON.parse(t);
+      } catch {
+        document.getElementById("aiOut").textContent = t;
+        return;
+      }
+      if (!r.ok) {
+        document.getElementById("aiOut").textContent = t;
+        return;
+      }
+      document.getElementById("aiOut").textContent = j.draft || "";
+    }
+
+    document.getElementById("btnCreate").addEventListener("click", async () => {
+      const title = document.getElementById("newTitle").value.trim();
+      if (!title) {
+        alert("请填写标题");
+        return;
+      }
+      const body = document.getElementById("newBody").value;
+      const platforms = parsePlats(document.getElementById("newPlats").value);
+      const r = await jyisApiFetch(API + "/marketing/contents", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, body, platforms, status: "draft" }),
+      });
+      if (!r.ok) {
+        alert("创建失败 " + r.status);
+        return;
+      }
+      document.getElementById("newTitle").value = "";
+      document.getElementById("newBody").value = "";
+      document.getElementById("newPlats").value = "";
+      await loadDashboard();
+      await loadContents();
+    });
+
+    document.getElementById("btnSave").addEventListener("click", () => saveEdit(null));
+    document.getElementById("btnPub").addEventListener("click", () => saveEdit("published"));
+    document.getElementById("btnAi").addEventListener("click", runAi);
+
+    document.getElementById("btnPubPolicy").addEventListener("click", async () => {
+      if (!currentId) return;
+      const env = document.getElementById("pubEnv").value;
+      const approved = document.getElementById("pubAppr").checked;
+      const r = await jyisApiFetch(API + "/marketing/contents/" + encodeURIComponent(currentId) + "/publish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ environment: env, law: PUBLISH_LAW, approved }),
+      });
+      const t = await r.text();
+      if (!r.ok) {
+        alert("发布失败 " + r.status + " " + t.slice(0, 240));
+        return;
+      }
+      alert("已通过策略校验并写入发布记录");
+      await loadDashboard();
+    });
+
+    async function boot() {
+      try {
+        const ub = typeof jyisInitUserBar === "function" ? jyisInitUserBar({ apiBase: API }) : null;
+        if (ub && ub.refresh) await ub.refresh();
+        await loadDashboard();
+        await loadContents();
+      } catch (e) {
+        document.getElementById("dashHint").innerHTML = "<span class=\"err\">" + escapeHtml(String(e)) + "</span>";
+      }
+    }
+    boot();
+  </script>
+</body>
+</html>

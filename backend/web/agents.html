@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>智能体 · 纪光元生</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --panel: #1a2332;
+      --text: #e6edf3;
+      --muted: #8b9cb3;
+      --accent: #3d8bfd;
+      --border: #30363d;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); }
+    header {
+      padding: 0.85rem 1.25rem; border-bottom: 1px solid var(--border);
+      display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0.75rem; justify-content: space-between;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    main { max-width: 1100px; margin: 0 auto; padding: 1rem; display: flex; flex-direction: column; gap: 1rem; }
+    section {
+      background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 1rem;
+    }
+    h1 { margin: 0; font-size: 1.15rem; }
+    h2 { margin: 0 0 0.6rem; font-size: 0.85rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    .meta { font-size: 0.8rem; color: var(--muted); }
+    .pill { font-size: 0.75rem; padding: 0.15rem 0.45rem; border-radius: 999px; background: #21262d; color: var(--muted); }
+    .row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+    pre, .mono { font-family: ui-monospace, monospace; font-size: 0.78rem; white-space: pre-wrap; word-break: break-all; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    th, td { border: 1px solid var(--border); padding: 0.35rem 0.5rem; text-align: left; }
+    th { background: #0d1117; color: var(--muted); }
+    tbody tr { cursor: pointer; }
+    tbody tr:hover { background: #21262d; }
+    tbody tr.sel { outline: 1px solid var(--accent); outline-offset: -1px; }
+    input[type="text"], select {
+      background: #0d1117; border: 1px solid var(--border); color: var(--text);
+      border-radius: 6px; padding: 0.4rem 0.5rem; font-size: 0.85rem;
+    }
+    button {
+      background: var(--accent); color: #fff; border: none; padding: 0.45rem 0.85rem;
+      border-radius: 6px; cursor: pointer; font-size: 0.85rem;
+    }
+    button.secondary { background: #30363d; }
+    ul.tree { list-style: none; padding-left: 0.75rem; margin: 0; }
+    .node { padding: 0.15rem 0; font-size: 0.88rem; }
+    .node small { color: var(--muted); }
+    .err { color: #f85149; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <div class="row">
+        <a href="/ui/">← 工作台</a>
+        <a href="/ui/collab.html">协作委托</a>
+        <a href="/ui/marketing.html">营销中心</a>
+        <a href="/ui/skills.html">技能库</a>
+        <a href="/ui/memory.html">工作记忆</a>
+        <a href="/ui/tasks.html">任务看板</a>
+        <a href="/ui/chat.html">对话会话</a>
+      </div>
+      <h1 style="margin-top:0.4rem">智能体 <span class="pill">PH1-T02 · UI</span></h1>
+    </div>
+    <div class="meta mono" style="text-align:right;max-width:24rem">
+      <div id="userBar">—</div>
+      <div style="margin-top:0.35rem">
+        <a href="/docs" target="_blank" rel="noopener noreferrer">Swagger</a>
+        · <a href="/redoc" target="_blank" rel="noopener noreferrer">ReDoc</a>
+      </div>
+    </div>
+  </header>
+  <main>
+    <section>
+      <h2>筛选列表</h2>
+      <p class="meta">对接 <code>GET /api/v1/agents</code>（<code>level</code>、<code>status</code>、<code>q</code> 与后端一致）。</p>
+      <div class="row" style="margin-bottom:0.5rem">
+        <label class="meta">层级
+          <select id="fltLevel">
+            <option value="">全部</option>
+            <option value="L0">L0</option>
+            <option value="L1">L1</option>
+            <option value="L2">L2</option>
+            <option value="L3">L3</option>
+            <option value="L4">L4</option>
+            <option value="L5">L5</option>
+            <option value="L6">L6</option>
+          </select>
+        </label>
+        <label class="meta">状态
+          <select id="fltStatus">
+            <option value="">全部</option>
+            <option value="online">online</option>
+            <option value="offline">offline</option>
+            <option value="busy">busy</option>
+            <option value="error">error</option>
+            <option value="degraded">degraded</option>
+          </select>
+        </label>
+        <input type="text" id="fltQ" placeholder="搜索 name / id" style="min-width:180px;flex:1;max-width:280px" />
+        <button type="button" id="btnLoad">刷新</button>
+      </div>
+      <div style="overflow:auto">
+        <table>
+          <thead>
+            <tr><th>ID</th><th>名称</th><th>层级</th><th>角色</th><th>状态</th><th>域</th></tr>
+          </thead>
+          <tbody id="agentBody"></tbody>
+        </table>
+      </div>
+    </section>
+    <section>
+      <h2>组织架构树</h2>
+      <p class="meta"><code>GET /api/v1/agents/org-tree</code></p>
+      <div id="orgTree" class="mono">加载中…</div>
+    </section>
+    <section>
+      <h2>详情 JSON</h2>
+      <p class="meta">点击上表一行加载 <code>GET /api/v1/agents/{id}</code></p>
+      <pre id="detailPre">—</pre>
+    </section>
+  </main>
+  <script src="api-client.js"></script>
+  <script>
+    const API = "/api/v1";
+    let selectedId = null;
+
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function renderTree(nodes, ul) {
+      nodes.forEach(n => {
+        const li = document.createElement("li");
+        li.className = "node";
+        li.innerHTML =
+          "<strong>" +
+          escapeHtml(n.name || "") +
+          "</strong> <small>" +
+          escapeHtml(n.id || "") +
+          " · " +
+          escapeHtml(n.level || "") +
+          " · " +
+          escapeHtml(n.role || "-") +
+          "</small>";
+        ul.appendChild(li);
+        if (n.children && n.children.length) {
+          const sub = document.createElement("ul");
+          sub.className = "tree";
+          li.appendChild(sub);
+          renderTree(n.children, sub);
+        }
+      });
+    }
+
+    async function loadOrgTree() {
+      const el = document.getElementById("orgTree");
+      el.textContent = "加载中…";
+      try {
+        const r = await jyisApiFetch(API + "/agents/org-tree");
+        if (!r.ok) throw new Error(String(r.status));
+        const data = await r.json();
+        const roots = Array.isArray(data.roots) ? data.roots : [];
+        el.textContent = "";
+        const ul = document.createElement("ul");
+        ul.className = "tree";
+        renderTree(roots, ul);
+        el.appendChild(ul);
+      } catch (e) {
+        el.innerHTML = "<span class=\"err\">" + escapeHtml(String(e)) + "</span>";
+      }
+    }
+
+    async function loadAgents() {
+      const tb = document.getElementById("agentBody");
+      tb.innerHTML = "";
+      const ps = new URLSearchParams();
+      ps.set("limit", "100");
+      ps.set("offset", "0");
+      const lv = document.getElementById("fltLevel").value.trim();
+      const st = document.getElementById("fltStatus").value.trim();
+      const q = document.getElementById("fltQ").value.trim();
+      if (lv) ps.set("level", lv);
+      if (st) ps.set("status", st);
+      if (q) ps.set("q", q);
+      try {
+        const r = await jyisApiFetch(API + "/agents?" + ps.toString());
+        if (!r.ok) throw new Error(String(r.status));
+        const data = await r.json();
+        const items = Array.isArray(data.items) ? data.items : [];
+        if (!items.length) {
+          const tr = document.createElement("tr");
+          tr.innerHTML = "<td colspan=\"6\" class=\"meta\">无数据</td>";
+          tb.appendChild(tr);
+          return;
+        }
+        items.forEach(a => {
+          const tr = document.createElement("tr");
+          tr.dataset.agentId = a.id;
+          if (selectedId === a.id) tr.classList.add("sel");
+          tr.innerHTML =
+            "<td class=\"mono\">" +
+            escapeHtml(a.id || "") +
+            "</td><td>" +
+            escapeHtml(a.name || "") +
+            "</td><td>" +
+            escapeHtml(a.level || "") +
+            "</td><td>" +
+            escapeHtml(a.role || "—") +
+            "</td><td>" +
+            escapeHtml(a.status || "") +
+            "</td><td>" +
+            escapeHtml(a.domain || "—") +
+            "</td>";
+          tr.addEventListener("click", () => selectAgent(a.id));
+          tb.appendChild(tr);
+        });
+      } catch (e) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = "<td colspan=\"6\" class=\"err\">" + escapeHtml(String(e)) + "</td>";
+        tb.appendChild(tr);
+      }
+    }
+
+    async function selectAgent(id) {
+      selectedId = id;
+      document.querySelectorAll("#agentBody tr").forEach(tr => {
+        tr.classList.toggle("sel", tr.dataset.agentId === id);
+      });
+      const pre = document.getElementById("detailPre");
+      pre.textContent = "加载中…";
+      try {
+        const r = await jyisApiFetch(API + "/agents/" + encodeURIComponent(id));
+        if (!r.ok) throw new Error(String(r.status));
+        const j = await r.json();
+        pre.textContent = JSON.stringify(j, null, 2);
+      } catch (e) {
+        pre.textContent = String(e);
+      }
+    }
+
+    document.getElementById("btnLoad").addEventListener("click", () => loadAgents());
+
+    async function boot() {
+      const ub = typeof jyisInitUserBar === "function" ? jyisInitUserBar({ apiBase: API }) : null;
+      if (ub && ub.refresh) await ub.refresh();
+      await loadOrgTree();
+      await loadAgents();
+    }
+    boot();
+  </script>
+</body>
+</html>

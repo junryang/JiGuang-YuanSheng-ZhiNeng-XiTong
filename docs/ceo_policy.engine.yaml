@@ -1,0 +1,168 @@
+version: "1.0.0"
+owner: "L1-CEO"
+description: "主脑策略引擎配置草案（按环境）"
+source_of_truth:
+  - "CEO_ABILITY_RUNTIME_MAPPING_v1.0.md"
+  - "AGENT_ABILITY_SPEC_v1.0.md"
+  - "PRODUCTION_RUNTIME_ASSUMPTIONS_v1.0.md"
+
+environment_policy:
+  dev:
+    allow_optional_mapping: true
+    high_risk_requires_approval: false
+    allow_simulation_only_on_violation: true
+    strict_law_bundle: false
+    deny_on_missing_audit: true
+    max_retry: 3
+  staging:
+    allow_optional_mapping: true
+    high_risk_requires_approval: true
+    allow_simulation_only_on_violation: false
+    strict_law_bundle: true
+    deny_on_missing_audit: true
+    max_retry: 2
+  prod:
+    allow_optional_mapping: false
+    high_risk_requires_approval: true
+    allow_simulation_only_on_violation: false
+    strict_law_bundle: true
+    deny_on_missing_audit: true
+    max_retry: 1
+
+thresholds:
+  dev:
+    ceo_error_rate: ">=5%"
+    tool_fail_rate: ">=10%"
+    p95_latency: ">=4s"
+  staging:
+    ceo_error_rate: ">=2%"
+    tool_fail_rate: ">=5%"
+    p95_latency: ">=3s"
+  prod:
+    ceo_error_rate: ">=1%"
+    tool_fail_rate: ">=2%"
+    p95_latency: ">=2s"
+
+policies:
+  - id: "CEO-POLICY-09"
+    ceo_ability: "CEO-09"
+    trigger: "主脑发起多工具编排任务"
+    required:
+      runtime: ["AGENT-RUNTIME-01", "AGENT-RUNTIME-04"]
+      web: ["WEB-04"]
+      law: ["LAW-04", "LAW-05"]
+    optional:
+      runtime: ["AGENT-RUNTIME-05"]
+      web: ["WEB-06", "WEB-09"]
+    deny_if:
+      - "missing(LAW-04)"
+      - "missing(LAW-05)"
+    environment_overrides:
+      dev:
+        allow_optional_mapping: true
+      staging:
+        require_reason_for_optional_mapping: true
+      prod:
+        optional_mapping_requires_approval: true
+    fallback: "降级为只读检查 + 人工审批"
+
+  - id: "CEO-POLICY-10"
+    ceo_ability: "CEO-10"
+    trigger: "主脑执行上下文压缩/记忆持久化"
+    required:
+      runtime: ["AGENT-RUNTIME-06"]
+      law: ["LAW-02", "LAW-05"]
+    optional:
+      runtime: ["AGENT-RUNTIME-11", "AGENT-RUNTIME-02"]
+      web: ["WEB-07"]
+    deny_if:
+      - "sensitive_data && missing(LAW-02)"
+    environment_overrides:
+      dev:
+        allow_test_storage: true
+      staging:
+        force_desensitization: true
+      prod:
+        require_min_data_principle: true
+    fallback: "仅保留本地短期摘要，不写外部存储"
+
+  - id: "CEO-POLICY-11"
+    ceo_ability: "CEO-11"
+    trigger: "主脑执行任务优先级调度"
+    required:
+      runtime: ["AGENT-RUNTIME-04", "AGENT-RUNTIME-03"]
+      law: ["LAW-05"]
+    optional:
+      runtime: ["AGENT-RUNTIME-09"]
+      web: ["WEB-04"]
+    deny_if:
+      - "unexplainable_decision"
+    environment_overrides:
+      dev:
+        allow_experimental_scheduler: true
+      staging:
+        require_baseline_comparison: true
+      prod:
+        allow_experimental_scheduler: false
+    fallback: "切换规则引擎保守调度"
+
+  - id: "CEO-POLICY-12"
+    ceo_ability: "CEO-12"
+    trigger: "主脑向L2/L3进行目标委托"
+    required:
+      runtime: ["AGENT-RUNTIME-03", "AGENT-RUNTIME-01"]
+      law: ["LAW-05"]
+    optional:
+      web: ["WEB-06"]
+    deny_if:
+      - "missing_acceptance_contract"
+    environment_overrides:
+      dev:
+        allow_partial_contract_autofill: true
+      staging:
+        require_contract_validation: true
+      prod:
+        block_on_contract_missing: true
+    fallback: "退回主脑补齐子目标包后再下发"
+
+  - id: "CEO-POLICY-13"
+    ceo_ability: "CEO-13"
+    trigger: "出网搜索/外发内容/素材入库等高风险流程"
+    required:
+      runtime: ["AGENT-RUNTIME-04"]
+      web: ["WEB-02", "WEB-03", "WEB-04"]
+      law: ["LAW-01", "LAW-02", "LAW-03", "LAW-04", "LAW-05"]
+    optional:
+      runtime: ["AGENT-RUNTIME-05"]
+    deny_if:
+      - "missing_any(LAW-01,LAW-02,LAW-03,LAW-04,LAW-05)"
+    environment_overrides:
+      dev:
+        allow_read_only_probe: true
+        allow_simulation_mode: true
+      staging:
+        enforce_full_law_chain: true
+      prod:
+        enforce_full_law_chain: true
+        require_approval_for_high_risk: true
+    fallback: "仅保留外链，不入库，不自动分发"
+
+  - id: "CEO-POLICY-14"
+    ceo_ability: "CEO-14"
+    trigger: "主脑健康度下降或工具链故障"
+    required:
+      runtime: ["AGENT-RUNTIME-05", "AGENT-RUNTIME-04"]
+      law: ["LAW-05"]
+    optional:
+      runtime: ["AGENT-RUNTIME-11"]
+      web: ["WEB-09"]
+    deny_if:
+      - "degraded_mode && high_risk_action"
+    environment_overrides:
+      dev:
+        allow_debug_degraded_mode: true
+      staging:
+        require_recovery_drill_passed: true
+      prod:
+        block_high_risk_actions_in_degraded_mode: true
+    fallback: "进入降级模式并上报老板/值班负责人"
