@@ -221,7 +221,7 @@ def test_git_sync_summary_endpoint():
             "status": "success",
             "source": "git_sync_once.ps1",
             "environment": "dev",
-            "context": {"status": "success", "branch": "main"},
+            "context": {"status": "success", "branch": "main", "push_attempts": 1},
         },
     )
     client.post(
@@ -231,7 +231,7 @@ def test_git_sync_summary_endpoint():
             "status": "failure",
             "source": "git_auto_sync.ps1",
             "environment": "dev",
-            "context": {"status": "failure", "branch": "main"},
+            "context": {"status": "failure", "branch": "main", "push_attempts": 2},
         },
     )
     client.post(
@@ -241,7 +241,7 @@ def test_git_sync_summary_endpoint():
             "status": "skipped",
             "source": "git_auto_sync.ps1",
             "environment": "dev",
-            "context": {"status": "skipped", "branch": "release/2026w16"},
+            "context": {"status": "skipped", "branch": "release/2026w16", "push_attempts": 0},
         },
     )
     r = client.get("/api/v1/ops/git-sync/summary", params={"days": 7, "environment": "dev"})
@@ -270,6 +270,9 @@ def test_git_sync_summary_endpoint():
     assert "top_source_branches" in body
     assert "failure_reason_distribution" in body
     assert "failure_reason_timeline" in body
+    assert "avg_push_attempts" in body
+    assert "max_push_attempts" in body
+    assert "push_attempt_sample_count" in body
     assert body["granularity"] == "day"
     assert body["bucket_label_format"] == "raw"
     assert isinstance(body["timeline"], list)
@@ -291,6 +294,9 @@ def test_git_sync_summary_endpoint():
     assert isinstance(body["consecutive_non_success_streak"], int)
     assert body["sync_health_level"] in {"healthy", "warning", "high_risk"}
     assert isinstance(body["sync_health_warning"], bool)
+    assert isinstance(body["avg_push_attempts"], float)
+    assert isinstance(body["max_push_attempts"], int)
+    assert isinstance(body["push_attempt_sample_count"], int)
     assert len(body["top_branches"]) >= 1
     assert "branch" in body["top_branches"][0]
     assert len(body["top_source_branches"]) >= 1
@@ -428,7 +434,7 @@ def test_analytics_reports_project_execution_and_ops_risk():
             "status": "failure",
             "source": "git_auto_sync.ps1",
             "environment": "dev",
-            "context": {"status": "failure", "branch": "main"},
+            "context": {"status": "failure", "branch": "main", "push_attempts": 2},
         },
     )
 
@@ -461,6 +467,9 @@ def test_analytics_reports_project_execution_and_ops_risk():
     assert "git_sync_top_failure_reason_code" in opsb
     assert "git_sync_top_failure_reason_count" in opsb
     assert "git_sync_top_failure_reason_rate" in opsb
+    assert "git_sync_avg_push_attempts" in opsb
+    assert "git_sync_max_push_attempts" in opsb
+    assert "git_sync_push_attempt_sample_count" in opsb
     assert "git_sync_consecutive_failure_streak" in opsb
     assert "git_sync_consecutive_non_success_streak" in opsb
     assert "git_sync_health_level" in opsb
@@ -484,6 +493,9 @@ def test_analytics_reports_project_execution_and_ops_risk():
     assert isinstance(opsb["git_sync_top_failure_reason_code"], str)
     assert isinstance(opsb["git_sync_top_failure_reason_count"], int)
     assert isinstance(opsb["git_sync_top_failure_reason_rate"], float)
+    assert isinstance(opsb["git_sync_avg_push_attempts"], float)
+    assert isinstance(opsb["git_sync_max_push_attempts"], int)
+    assert isinstance(opsb["git_sync_push_attempt_sample_count"], int)
     assert isinstance(opsb["git_sync_consecutive_failure_streak"], int)
     assert isinstance(opsb["git_sync_consecutive_non_success_streak"], int)
     assert opsb["git_sync_health_level"] in {"healthy", "warning", "high_risk"}
@@ -1130,11 +1142,11 @@ def test_approvals_pending_endpoint():
     s = client.post(f"/api/v1/projects/{pid}/submit", json={})
     assert s.status_code == 200
 
-    r = client.get("/api/v1/approvals/pending", params={"limit": 10, "offset": 0})
+    r = client.get("/api/v1/approvals/pending", params={"limit": 500, "offset": 0})
     assert r.status_code == 200
     body = r.json()
     assert "items" in body and "total" in body
-    assert body["limit"] == 10
+    assert body["limit"] == 500
     assert body["offset"] == 0
     assert any(x["id"] == pid for x in body["items"])
 

@@ -494,3 +494,19 @@
       - 口径：`git_sync_failure_rate * (1 + git_sync_consecutive_failure_streak)`，保留 1 位小数
       - 用于同时反映失败占比与连续失败叠加压力，便于快速识别高压风险窗口
       - 补充最小回归断言，校验字段存在且类型正确（`float`）
+
+61. Git 同步链路兼容修复与推送重试可观测增强（完成后增强）
+    - 文件：`scripts/git_sync_once.ps1`、`scripts/logs/git_auto_sync_20260416.log`、`backend/app/api/routes.py`、`backend/tests/test_api_smoke.py`
+    - 变更：
+      - 修复 `git_sync_once.ps1` 在旧版 PowerShell 下的解析阻塞（`??` 语法兼容问题），改为显式空值处理，恢复同步脚本可执行性。
+      - 实测一次 Git 同步链路：首次 push 失败后重试成功，`SYNC_RESULT` 为 `success`，日志记录失败原因（连接重置）与重试成功轨迹；审计上报失败不阻断主流程。
+      - `GET /api/v1/ops/git-sync/summary` 新增推送重试观测字段：
+        - `avg_push_attempts`
+        - `max_push_attempts`
+        - `push_attempt_sample_count`
+      - `GET /api/v1/analytics/reports?report_type=ops_risk` 新增推送重试观测字段：
+        - `git_sync_avg_push_attempts`
+        - `git_sync_max_push_attempts`
+        - `git_sync_push_attempt_sample_count`
+      - 增强时区稳定性：当运行环境缺少 IANA tzdata 时，为 `UTC/GMT/Asia/Shanghai` 提供兜底映射，避免 `git-sync/summary` 因时区解析失败返回 400。
+      - 补充最小回归断言并修正审批分页断言（扩大 `limit` 以避免数据累积导致的偶发漏检），保持兼容增强。

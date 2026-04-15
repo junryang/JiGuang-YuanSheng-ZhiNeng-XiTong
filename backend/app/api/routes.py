@@ -90,6 +90,19 @@ def _minutes_since(value: datetime | None, now: datetime) -> float | None:
     return round(delta.total_seconds() / 60.0, 1)
 
 
+def _extract_push_attempts(context: dict[str, Any]) -> int | None:
+    for key in ("push_attempts", "push_retry_count", "retry_count"):
+        raw = context.get(key)
+        if raw is None:
+            continue
+        try:
+            value = int(raw)
+        except (TypeError, ValueError):
+            continue
+        return max(0, value)
+    return None
+
+
 def _maybe_emit_project_risk_alert(
     *,
     project_id: str,
@@ -1312,13 +1325,26 @@ def git_sync_summary(
             status_code=400,
             detail={"error_code": "INVALID_BUCKET_LABEL_FORMAT", "reason": "bucket_label_format must be raw or human"},
         )
+    normalized_tz = str(tz or "UTC").strip()
+    fallback_tz_map = {
+        "UTC": timezone.utc,
+        "ETC/UTC": timezone.utc,
+        "GMT": timezone.utc,
+        "ETC/GMT": timezone.utc,
+        "ASIA/SHANGHAI": timezone(timedelta(hours=8), name="CST"),
+    }
     try:
-        target_tz = ZoneInfo(tz)
+        target_tz = ZoneInfo(normalized_tz)
     except Exception:
-        raise HTTPException(
-            status_code=400,
-            detail={"error_code": "INVALID_TIMEZONE", "reason": "tz must be a valid IANA timezone"},
-        )
+        # Windows + missing tzdata 场景下，兜底接受常见时区别名，避免健康接口因时区库缺失降级失败。
+        fallback_tz = fallback_tz_map.get(normalized_tz.upper())
+        if fallback_tz is not None:
+            target_tz = fallback_tz
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail={"error_code": "INVALID_TIMEZONE", "reason": "tz must be a valid IANA timezone"},
+            )
     since_dt = _parse_utc_iso(since) if since else None
     until_dt = _parse_utc_iso(until) if until else None
     if (since and since_dt is None) or (until and until_dt is None):
@@ -1345,6 +1371,9 @@ def git_sync_summary(
     source_branch_totals: dict[tuple[str, str], dict[str, int]] = {}
     failure_reason_map: dict[str, int] = {}
     failure_reason_timeline_map: dict[str, dict[str, int]] = {d: {} for d in bucket_keys}
+    push_attempt_samples = 0
+    push_attempt_sum = 0
+    push_attempt_max = 0
     last_success_at: datetime | None = None
     last_failure_at: datetime | None = None
     last_skipped_at: datetime | None = None
@@ -1372,6 +1401,12 @@ def git_sync_summary(
         status = str(context.get("status", "")).strip().lower()
         if status not in {"success", "failure", "skipped"}:
             continue
+        push_attempts = _extract_push_attempts(context)
+        if push_attempts is not None:
+            push_attempt_samples += 1
+            push_attempt_sum += push_attempts
+            if push_attempts > push_attempt_max:
+                push_attempt_max = push_attempts
         if last_event_at is None or ts > last_event_at:
             last_event_at = ts
         if status == "success" and (last_success_at is None or ts > last_success_at):
@@ -1445,6 +1480,7 @@ def git_sync_summary(
 
     success_rate = round((totals["success"] / totals["total"]) * 100, 1) if totals["total"] > 0 else 0.0
     failure_rate = round((totals["failure"] / totals["total"]) * 100, 1) if totals["total"] > 0 else 0.0
+    avg_push_attempts = round(push_attempt_sum / push_attempt_samples, 2) if push_attempt_samples > 0 else 0.0
     top_branches = sorted(
         [{"branch": b, **stats} for b, stats in branch_totals.items()],
         key=lambda x: (-x["total"], x["branch"]),
@@ -1503,7 +1539,7 @@ def git_sync_summary(
         "granularity": norm_granularity,
         "include_empty_buckets": include_empty_buckets,
         "bucket_label_format": norm_bucket_label_format,
-        "tz": tz,
+        "tz": normalized_tz,
         "since": since_dt.isoformat() if since_dt else None,
         "until": until_dt.isoformat() if until_dt else None,
         "totals": totals,
@@ -1527,6 +1563,9 @@ def git_sync_summary(
         "top_source_branches": top_source_branches,
         "failure_reason_distribution": failure_reason_distribution,
         "failure_reason_timeline": failure_reason_timeline_with_label,
+        "avg_push_attempts": avg_push_attempts,
+        "max_push_attempts": push_attempt_max,
+        "push_attempt_sample_count": push_attempt_samples,
         "timeline": timeline_with_label,
     }
 
@@ -1620,6 +1659,19 @@ def analytics_reports(
         rc = str(e.get("reason_code") or "UNKNOWN")
         failure_reason_counter[rc] = failure_reason_counter.get(rc, 0) + 1
     git_total = len(git_events)
+    push_attempt_sample_count = 0
+    push_attempt_sum = 0
+    push_attempt_max = 0
+    for e in git_events:
+        context = e.get("context") or {}
+        push_attempts = _extract_push_attempts(context)
+        if push_attempts is None:
+            continue
+        push_attempt_sample_count += 1
+        push_attempt_sum += push_attempts
+        if push_attempts > push_attempt_max:
+            push_attempt_max = push_attempts
+    git_sync_avg_push_attempts = round(push_attempt_sum / push_attempt_sample_count, 2) if push_attempt_sample_count > 0 else 0.0
     git_success_rate = round((git_success / git_total) * 100, 1) if git_total > 0 else 0.0
     git_failure_rate = round((git_failure / git_total) * 100, 1) if git_total > 0 else 0.0
     git_skipped_rate = round((git_skipped / git_total) * 100, 1) if git_total > 0 else 0.0
@@ -1691,6 +1743,9 @@ def analytics_reports(
         "git_sync_top_failure_reason_code": top_failure_reason_code,
         "git_sync_top_failure_reason_count": top_failure_reason_count,
         "git_sync_top_failure_reason_rate": top_failure_reason_rate,
+        "git_sync_avg_push_attempts": git_sync_avg_push_attempts,
+        "git_sync_max_push_attempts": push_attempt_max,
+        "git_sync_push_attempt_sample_count": push_attempt_sample_count,
         "git_sync_consecutive_failure_streak": consecutive_failure_streak,
         "git_sync_consecutive_non_success_streak": consecutive_non_success_streak,
         "git_sync_health_level": git_sync_health_level,
