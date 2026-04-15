@@ -570,3 +570,15 @@
         - `git_sync_audit_delivery_health_warning`（布尔值）
       - 判定口径：优先基于审计投递失败计数与“仅失败无成功”场景进行风险分级，保持现有字段兼容并增强可观测判读效率。
       - 补充最小回归断言，校验字段存在、枚举合法和类型正确。
+
+67. Git 摘要与运营风险报告补充审计投递失败压力指数（完成后增强）
+    - 文件：`backend/app/api/routes.py`、`backend/tests/test_api_smoke.py`
+    - 变更：
+      - `GET /api/v1/ops/git-sync/summary` 新增：
+        - `audit_delivery_failure_pressure_index`
+      - `GET /api/v1/analytics/reports?report_type=ops_risk` 新增：
+        - `git_sync_audit_delivery_failure_pressure_index`
+      - 口径：
+        - `audit_delivery_failure_rate * (1 + audit_delivery_failed_count)`，保留 1 位小数
+      - 目标：同时反映审计投递失败占比与失败规模叠加压力，快速识别审计旁路高压窗口。
+      - 补充最小回归断言，校验字段存在且类型正确（`float`），保持兼容增强。
