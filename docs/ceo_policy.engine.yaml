@@ -14,6 +14,8 @@ environment_policy:
     strict_law_bundle: false
     deny_on_missing_audit: true
     max_retry: 3
+    risk_alert_cooldown_minutes: 30
+    risk_alert_trigger_score: 6
   staging:
     allow_optional_mapping: true
     high_risk_requires_approval: true
@@ -21,6 +23,8 @@ environment_policy:
     strict_law_bundle: true
     deny_on_missing_audit: true
     max_retry: 2
+    risk_alert_cooldown_minutes: 20
+    risk_alert_trigger_score: 6
   prod:
     allow_optional_mapping: false
     high_risk_requires_approval: true
@@ -28,6 +32,8 @@ environment_policy:
     strict_law_bundle: true
     deny_on_missing_audit: true
     max_retry: 1
+    risk_alert_cooldown_minutes: 10
+    risk_alert_trigger_score: 6
 
 thresholds:
   dev:

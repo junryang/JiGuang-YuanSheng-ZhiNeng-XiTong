@@ -176,7 +176,7 @@
 
 ---
 
-## 三、v1.1.0（计划中）
+## 三、v1.1.0（已完成）
 
 **预计发布日期**：2026-02-20
 
@@ -184,11 +184,23 @@
 
 | 方法 | 端点 | 说明 | 关联通用能力 | 状态 |
 |------|------|------|-------------|------|
-| POST | `/api/v1/agents/batch` | 批量创建智能体 | EX-12 批量执行 | 计划中 |
-| GET | `/api/v1/analytics/reports` | 获取分析报告 | QL-07 质量趋势分析 | 计划中 |
-| POST | `/api/v1/webhooks` | 创建Webhook | WEB-04 API调用与集成 | 计划中 |
-| GET | `/api/v1/audit/logs` | 获取审计日志 | SC-07 操作审计 | 计划中 |
-| POST | `/api/v1/agents/{id}/reflect` | 触发自我反思 | AGENT-RUNTIME-11 自我反思 | 计划中 |
+| POST | `/api/v1/agents/batch` | 批量创建智能体 | EX-12 批量执行 | 已完成 |
+| GET | `/api/v1/analytics/reports` | 获取分析报告 | QL-07 质量趋势分析 | 已完成 |
+| POST | `/api/v1/webhooks` | 创建Webhook | WEB-04 API调用与集成 | 已完成 |
+| GET | `/api/v1/webhooks` | 查询Webhook列表 | WEB-04 API调用与集成 | 已完成 |
+| GET | `/api/v1/webhooks/{id}` | 查询Webhook详情 | WEB-04 API调用与集成 | 已完成 |
+| PUT | `/api/v1/webhooks/{id}` | 更新Webhook | WEB-04 API调用与集成 | 已完成 |
+| DELETE | `/api/v1/webhooks/{id}` | 删除Webhook | WEB-04 API调用与集成 | 已完成 |
+| GET | `/api/v1/audit/logs` | 获取审计日志 | SC-07 操作审计 | 已完成 |
+| POST | `/api/v1/agents/{id}/reflect` | 触发自我反思 | AGENT-RUNTIME-11 自我反思 | 已完成 |
+| GET | `/api/v1/agents/{id}/skills` | 查询智能体技能关联 | META-01 能力扩展 | 已完成 |
+| PUT | `/api/v1/agents/{id}/skills` | 更新智能体技能关联 | META-01 能力扩展 | 已完成 |
+| GET | `/api/v1/agents/{id}/memory` | 查询智能体记忆 | MM-04 记忆检索 | 已完成 |
+| GET | `/api/v1/approvals/pending` | 获取待审批列表（分页） | APPROVE-05 审批通知与待办管理 | 已完成 |
+| POST | `/api/v1/approvals/applications` | 发起审批申请 | APPROVE-01 申请发起与申报 | 已完成 |
+| POST | `/api/v1/approvals/{id}/approve` | 审批通过 | APPROVE-02 多级审批与流转 | 已完成 |
+| POST | `/api/v1/approvals/{id}/reject` | 审批驳回 | APPROVE-02 多级审批与流转 | 已完成 |
+| GET | `/api/v1/chat/history` | 查询会话历史聚合 | MM-04 记忆检索 | 已完成 |
 
 ### 3.2 参数变更
 
@@ -204,7 +216,7 @@
 |------|---------|---------|
 | GET `/api/v1/agents` | 新增字段 | `tags`, `runtime_state.cognitive_load` |
 | GET `/api/v1/projects/{id}` | 新增字段 | `tags`, `last_activity` |
-| POST `/api/v1/chat/sessions/{id}/messages` | 新增事件 | `thinking_steps` (SSE) |
+| POST `/api/v1/chat/sessions/{id}/messages/stream` | 新增事件 | `thinking_steps` (SSE) |
 
 ---
 

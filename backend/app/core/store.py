@@ -48,6 +48,7 @@ class JsonStore:
             },
             "marketing_contents": [],
             "marketing_publish_events": [],
+            "webhooks": [],
         }
 
     def _read(self) -> Dict[str, Any]:
@@ -91,6 +92,9 @@ class JsonStore:
         if "marketing_publish_events" not in data:
             data["marketing_publish_events"] = []
             changed = True
+        if "webhooks" not in data:
+            data["webhooks"] = []
+            changed = True
         if changed:
             self._write(data)
         return data
@@ -120,6 +124,15 @@ class JsonStore:
         finally:
             if os.path.exists(tmp_name):
                 os.remove(tmp_name)
+
+    def _touch_project_last_activity(self, data: Dict[str, Any], project_id: str) -> None:
+        for i, p in enumerate(data.get("projects") or []):
+            if str(p.get("id")) != str(project_id):
+                continue
+            merged = dict(p)
+            merged["last_activity"] = _utc_now_iso()
+            data["projects"][i] = merged
+            return
 
     def seed_if_empty(self) -> None:
         data = self._read()
@@ -217,6 +230,34 @@ class JsonStore:
                 return a
         raise KeyError(f"agent not found: {agent_id}")
 
+    def create_agent(self, record: Dict[str, Any]) -> Dict[str, Any]:
+        data = self._read()
+        parent_id = record.get("parent_id")
+        if parent_id:
+            # 校验父节点存在，避免孤儿引用。
+            _ = next((a for a in data["agents"] if str(a.get("id")) == str(parent_id)), None)
+            if _ is None:
+                raise ValueError(f"parent agent not found: {parent_id}")
+        row = {
+            "id": f"agent-{uuid4().hex[:10]}",
+            "name": str(record.get("name") or "").strip()[:120] or "unnamed-agent",
+            "level": str(record.get("level") or "L5"),
+            "role": str(record.get("role") or "EMPLOYEE"),
+            "status": str(record.get("status") or "online"),
+            "parent_id": parent_id,
+            "domain": record.get("domain"),
+        }
+        data["agents"].append(row)
+        self._write(data)
+        return row
+
+    def create_agents_batch(self, rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        created: List[Dict[str, Any]] = []
+        # 顺序创建，允许后续记录引用本批次前序新建节点。
+        for row in rows:
+            created.append(self.create_agent(row))
+        return created
+
     def get_org_tree(self) -> List[Dict[str, Any]]:
         agents = self._read()["agents"]
         ids = {str(a["id"]) for a in agents if a.get("id")}
@@ -266,6 +307,11 @@ class JsonStore:
         data = self._read()
         pid = self._next_project_id(data)
         project = {"id": pid, **record}
+        if "tags" not in project:
+            project["tags"] = []
+        if not isinstance(project.get("tags"), list):
+            project["tags"] = []
+        project["last_activity"] = _utc_now_iso()
         data["projects"].append(project)
         self._write(data)
         return project
@@ -276,6 +322,7 @@ class JsonStore:
             if p.get("id") == project_id:
                 merged = {**p, **{k: v for k, v in patch.items() if v is not None and k != "id"}}
                 merged["id"] = project_id
+                merged["last_activity"] = _utc_now_iso()
                 data["projects"][i] = merged
                 self._write(data)
                 return merged
@@ -462,6 +509,7 @@ class JsonStore:
             "parent_id": record.get("parent_id"),
             "assignee_level": record.get("assignee_level"),
             "assignee_role": record.get("assignee_role"),
+            "assignee_id": record.get("assignee_id"),
             "estimated_hours": record.get("estimated_hours"),
             "actual_hours": record.get("actual_hours"),
             "dependencies": list(record.get("dependencies") or []),
@@ -471,6 +519,7 @@ class JsonStore:
         }
         self._validate_task_integrity(task, data, is_new=True)
         data["tasks"].append(task)
+        self._touch_project_last_activity(data, task["project_id"])
         self._write(data)
         return task
 
@@ -478,6 +527,7 @@ class JsonStore:
         self,
         *,
         project_id: Optional[str] = None,
+        assignee_id: Optional[str] = None,
         parent_id: Optional[str] = None,
         root_only: bool = False,
         status: Optional[str] = None,
@@ -487,6 +537,8 @@ class JsonStore:
         rows = list(self._read()["tasks"])
         if project_id:
             rows = [t for t in rows if str(t.get("project_id")) == project_id]
+        if assignee_id:
+            rows = [t for t in rows if str(t.get("assignee_id") or "") == str(assignee_id)]
         if root_only:
             rows = [t for t in rows if not t.get("parent_id")]
         elif parent_id is not None:
@@ -524,6 +576,7 @@ class JsonStore:
             merged["dependencies"] = list(patch.get("dependencies") or [])
         self._validate_task_integrity(merged, data, is_new=False)
         data["tasks"][idx] = merged
+        self._touch_project_last_activity(data, str(merged.get("project_id", "")))
         self._write(data)
         return merged
 
@@ -533,8 +586,11 @@ class JsonStore:
         if children:
             raise ValueError("cannot delete task with child tasks")
         self._task_index(data, task_id)
+        removed = next((t for t in data["tasks"] if t.get("id") == task_id), None)
         data["tasks"] = [t for t in data["tasks"] if t.get("id") != task_id]
         self._strip_dependency_refs(data, task_id)
+        if removed and removed.get("project_id"):
+            self._touch_project_last_activity(data, str(removed.get("project_id")))
         self._write(data)
 
     # --- skills (PH3-T02) ---
@@ -622,6 +678,37 @@ class JsonStore:
         if len(data["skills"]) == before:
             raise KeyError(f"skill not found: {skill_id}")
         self._write(data)
+
+    def list_agent_skills(self, agent_id: str) -> List[Dict[str, Any]]:
+        self.get_agent(agent_id)
+        rows = []
+        for s in self._read()["skills"]:
+            linked = [str(x) for x in (s.get("linked_agent_ids") or [])]
+            if str(agent_id) in linked:
+                rows.append(dict(s))
+        return rows
+
+    def replace_agent_skills(self, agent_id: str, skill_ids: List[str]) -> List[Dict[str, Any]]:
+        self.get_agent(agent_id)
+        wanted = [str(x) for x in (skill_ids or [])]
+        data = self._read()
+        existing_ids = {str(s.get("id")) for s in data["skills"]}
+        missing = [sid for sid in wanted if sid not in existing_ids]
+        if missing:
+            raise KeyError(f"skills not found: {', '.join(missing)}")
+
+        wanted_set = set(wanted)
+        for i, s in enumerate(data["skills"]):
+            linked = [str(x) for x in (s.get("linked_agent_ids") or [])]
+            linked_set = set(linked)
+            sid = str(s.get("id"))
+            if sid in wanted_set and str(agent_id) not in linked_set:
+                linked.append(str(agent_id))
+            if sid not in wanted_set and str(agent_id) in linked_set:
+                linked = [x for x in linked if str(x) != str(agent_id)]
+            data["skills"][i] = {**s, "linked_agent_ids": linked}
+        self._write(data)
+        return self.list_agent_skills(agent_id)
 
     # --- delegations (PH3-T04 雏形) ---
 
@@ -741,6 +828,7 @@ class JsonStore:
             "created_at": _utc_now_iso(),
         }
         data["project_discussions"].append(row)
+        self._touch_project_last_activity(data, project_id)
         self._write(data)
         return row
 
@@ -920,3 +1008,72 @@ class JsonStore:
             self._write(data)
             return merged
         raise KeyError(f"marketing content not found: {content_id}")
+
+    # --- webhooks (v1.1.0 planned) ---
+
+    def create_webhook(self, record: Dict[str, Any]) -> Dict[str, Any]:
+        data = self._read()
+        if "webhooks" not in data:
+            data["webhooks"] = []
+        row: Dict[str, Any] = {
+            "id": f"wh-{uuid4().hex[:10]}",
+            "name": str(record.get("name", "")).strip()[:120] or "default-webhook",
+            "url": str(record.get("url", "")).strip(),
+            "events": [str(x)[:80] for x in (record.get("events") or [])][:32],
+            "enabled": bool(record.get("enabled", True)),
+            "secret": str(record.get("secret", "")).strip()[:256],
+            "created_at": _utc_now_iso(),
+            "updated_at": _utc_now_iso(),
+        }
+        data["webhooks"].append(row)
+        self._write(data)
+        return row
+
+    def list_webhooks(self, *, enabled: Optional[bool] = None, limit: int = 100, offset: int = 0) -> tuple[List[Dict[str, Any]], int]:
+        rows = list(self._read().get("webhooks") or [])
+        rows.sort(key=lambda x: str(x.get("created_at", "")), reverse=True)
+        if enabled is not None:
+            rows = [x for x in rows if bool(x.get("enabled", True)) is bool(enabled)]
+        total = len(rows)
+        lim = max(1, min(int(limit), 500))
+        off = max(0, int(offset))
+        return rows[off : off + lim], total
+
+    def get_webhook(self, webhook_id: str) -> Dict[str, Any]:
+        for row in self._read().get("webhooks") or []:
+            if str(row.get("id")) == str(webhook_id):
+                return dict(row)
+        raise KeyError(f"webhook not found: {webhook_id}")
+
+    def update_webhook(self, webhook_id: str, patch: Dict[str, Any]) -> Dict[str, Any]:
+        data = self._read()
+        rows = list(data.get("webhooks") or [])
+        for i, row in enumerate(rows):
+            if str(row.get("id")) != str(webhook_id):
+                continue
+            merged = dict(row)
+            if "name" in patch and patch.get("name") is not None:
+                merged["name"] = str(patch.get("name")).strip()[:120] or merged.get("name", "default-webhook")
+            if "url" in patch and patch.get("url") is not None:
+                merged["url"] = str(patch.get("url")).strip()
+            if "events" in patch and patch.get("events") is not None:
+                merged["events"] = [str(x)[:80] for x in (patch.get("events") or [])][:32]
+            if "enabled" in patch and patch.get("enabled") is not None:
+                merged["enabled"] = bool(patch.get("enabled"))
+            if "secret" in patch and patch.get("secret") is not None:
+                merged["secret"] = str(patch.get("secret")).strip()[:256]
+            merged["updated_at"] = _utc_now_iso()
+            rows[i] = merged
+            data["webhooks"] = rows
+            self._write(data)
+            return merged
+        raise KeyError(f"webhook not found: {webhook_id}")
+
+    def delete_webhook(self, webhook_id: str) -> None:
+        data = self._read()
+        rows = list(data.get("webhooks") or [])
+        kept = [x for x in rows if str(x.get("id")) != str(webhook_id)]
+        if len(kept) == len(rows):
+            raise KeyError(f"webhook not found: {webhook_id}")
+        data["webhooks"] = kept
+        self._write(data)

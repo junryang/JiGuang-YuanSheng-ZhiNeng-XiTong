@@ -15,6 +15,7 @@ class TaskFieldsBase(BaseModel):
     parent_id: Optional[str] = None
     assignee_level: Optional[str] = None
     assignee_role: Optional[str] = None
+    assignee_id: Optional[str] = None
     estimated_hours: Optional[float] = None
     actual_hours: Optional[float] = None
     dependencies: List[str] = Field(default_factory=list)
@@ -40,6 +41,7 @@ class TaskUpdateRequest(BaseModel):
     parent_id: Optional[str] = None
     assignee_level: Optional[str] = None
     assignee_role: Optional[str] = None
+    assignee_id: Optional[str] = None
     estimated_hours: Optional[float] = None
     actual_hours: Optional[float] = None
     dependencies: Optional[List[str]] = None
@@ -61,6 +63,7 @@ class TaskOut(BaseModel):
     parent_id: Optional[str] = None
     assignee_level: Optional[str] = None
     assignee_role: Optional[str] = None
+    assignee_id: Optional[str] = None
     estimated_hours: Optional[float] = None
     actual_hours: Optional[float] = None
     dependencies: List[str] = Field(default_factory=list)

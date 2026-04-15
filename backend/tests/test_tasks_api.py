@@ -100,3 +100,21 @@ def test_task_status_transition_guard():
 def test_task_list_rejects_invalid_status_filter():
     r = client.get("/api/v1/tasks", params={"status": "archived"})
     assert r.status_code == 422
+
+
+def test_task_list_filters_by_assignee_id():
+    pid = _any_project_id()
+    c = client.post(
+        "/api/v1/tasks",
+        json={"project_id": pid, "name": "assignee-filter-task", "assignee_id": "agent-ceo"},
+    )
+    assert c.status_code == 201
+    tid = c.json()["id"]
+
+    hit = client.get("/api/v1/tasks", params={"project_id": pid, "assignee_id": "agent-ceo"})
+    assert hit.status_code == 200
+    assert any(t["id"] == tid for t in hit.json()["items"])
+
+    miss = client.get("/api/v1/tasks", params={"project_id": pid, "assignee_id": "agent-no-such"})
+    assert miss.status_code == 200
+    assert all(t.get("assignee_id") == "agent-no-such" for t in miss.json()["items"])

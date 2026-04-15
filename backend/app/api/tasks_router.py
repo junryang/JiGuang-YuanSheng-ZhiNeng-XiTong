@@ -21,6 +21,7 @@ def list_tasks_for_project(
     parent_id: str | None = None,
     root_only: bool = Query(False, description="仅返回无 parent 的顶层任务"),
     status: TaskStatus | None = None,
+    assignee_id: str | None = Query(None, description="按负责人智能体ID筛选"),
     limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
 ):
@@ -30,6 +31,7 @@ def list_tasks_for_project(
         raise HTTPException(status_code=404, detail=f"project not found: {project_id}")
     items, total = store.list_tasks(
         project_id=project_id,
+        assignee_id=assignee_id,
         parent_id=parent_id,
         root_only=root_only,
         status=status,
@@ -74,11 +76,13 @@ def list_tasks(
     parent_id: str | None = None,
     root_only: bool = Query(False),
     status: TaskStatus | None = None,
+    assignee_id: str | None = Query(None, description="按负责人智能体ID筛选"),
     limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
 ):
     items, total = store.list_tasks(
         project_id=project_id,
+        assignee_id=assignee_id,
         parent_id=parent_id,
         root_only=root_only,
         status=status,

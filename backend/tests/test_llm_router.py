@@ -40,6 +40,9 @@ def test_llm_status_endpoint():
     assert "llm_enabled" in body
     assert "primary_model" in body
     assert "api_configured" in body
+    assert "cache_hits" in body
+    assert "cache_misses" in body
+    assert "cache_hit_rate" in body
 
 
 def test_history_to_chat_messages_filters_roles():

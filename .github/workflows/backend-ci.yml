@@ -39,6 +39,14 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Run project risk alert minimum regressions
+        run: |
+          python -m pytest tests/test_progress_gantt.py tests/test_project_discussion.py tests/test_api_smoke.py -q --tb=short
+
+      - name: Run chat and llm integration regressions
+        run: |
+          python -m pytest tests/test_auth_and_chat_stream.py tests/test_llm_router.py -q --tb=short
+
       - name: Run backend regressions
         run: |
-          python -m pytest tests/test_ceo_planning_apply.py tests/test_ph3_agents_skills.py tests/test_api_smoke.py -q --tb=short
+          python -m pytest tests/test_ceo_planning_apply.py tests/test_ph3_agents_skills.py tests/test_api_smoke.py tests/test_progress_gantt.py tests/test_tasks_api.py -q --tb=short

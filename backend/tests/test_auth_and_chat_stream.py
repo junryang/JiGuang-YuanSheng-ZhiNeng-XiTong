@@ -76,6 +76,7 @@ def test_chat_sse_stream():
             buf += chunk
             if b'"type": "done"' in buf:
                 break
+    assert b"thinking_steps" in buf
     assert b"delta" in buf
     assert b"done" in buf
     hist = client.get(f"/api/v1/chat/sessions/{sid}/messages")

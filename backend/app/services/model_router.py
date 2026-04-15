@@ -63,6 +63,8 @@ def load_llm_settings() -> LLMSettings:
 
 _sem_pair: tuple[int, asyncio.Semaphore] | None = None
 _cache: "OrderedDict[str, tuple[float, str]]" = OrderedDict()
+_cache_hits: int = 0
+_cache_misses: int = 0
 
 
 def _get_semaphore(max_concurrent: int) -> asyncio.Semaphore:
@@ -82,14 +84,18 @@ def _cache_key(messages: List[Dict[str, str]], model: str) -> str:
 
 
 def _cache_get(key: str, settings: LLMSettings) -> Optional[str]:
+    global _cache_hits, _cache_misses
     now = time.monotonic()
     if key not in _cache:
+        _cache_misses += 1
         return None
     exp_at, text = _cache[key]
     if exp_at <= now:
         del _cache[key]
+        _cache_misses += 1
         return None
     _cache.move_to_end(key)
+    _cache_hits += 1
     return text
 
 
@@ -190,6 +196,8 @@ async def generate_chat_reply(history: List[Dict[str, Any]]) -> Optional[str]:
 
 def public_llm_status() -> Dict[str, Any]:
     s = load_llm_settings()
+    total_cache_requests = _cache_hits + _cache_misses
+    hit_rate = round((_cache_hits / total_cache_requests) * 100, 1) if total_cache_requests > 0 else 0.0
     return {
         "llm_enabled": s.enabled,
         "api_configured": bool(s.api_key),
@@ -200,4 +208,7 @@ def public_llm_status() -> Dict[str, Any]:
         "cache_entries": len(_cache),
         "cache_max_entries": s.cache_max_entries,
         "cache_ttl_seconds": s.cache_ttl_seconds,
+        "cache_hits": _cache_hits,
+        "cache_misses": _cache_misses,
+        "cache_hit_rate": hit_rate,
     }
