@@ -58,6 +58,24 @@
       "status": "busy",
       "parent_id": "agent-ceo",
       "domain": "D03"
+    },
+    {
+      "id": "agent-3a92bd7937",
+      "name": "batch-agent-1",
+      "level": "L5",
+      "role": "EMPLOYEE",
+      "status": "online",
+      "parent_id": "agent-ceo",
+      "domain": "D03"
+    },
+    {
+      "id": "agent-845f21fa3b",
+      "name": "batch-agent-2",
+      "level": "L5",
+      "role": "EMPLOYEE",
+      "status": "busy",
+      "parent_id": "agent-ceo",
+      "domain": "D03"
     }
   ],
   "projects": [
@@ -44119,6 +44137,187 @@
       "acceptance_contract": "dev-placeholder-contract",
       "staging_precheck": null,
       "last_activity": "2026-04-15T16:23:05.957168+00:00"
+    },
+    {
+      "id": "JYIS-2026-2540",
+      "name": "analytics-demo",
+      "domain": "D03",
+      "project_type": "new_feature",
+      "environment": "dev",
+      "status": "draft",
+      "law": [
+        "LAW-05"
+      ],
+      "tags": [],
+      "acceptance_contract": "dev-placeholder-contract",
+      "staging_precheck": null,
+      "last_activity": "2026-04-15T16:25:08.215537+00:00"
+    },
+    {
+      "id": "JYIS-2026-2541",
+      "name": "测试项目",
+      "domain": "D03",
+      "project_type": "new_feature",
+      "environment": "dev",
+      "status": "draft",
+      "law": [
+        "LAW-05"
+      ],
+      "tags": [],
+      "acceptance_contract": "dev-placeholder-contract",
+      "staging_precheck": null,
+      "last_activity": "2026-04-15T16:26:51.385571+00:00"
+    },
+    {
+      "id": "JYIS-2026-2542",
+      "name": "预检通过",
+      "domain": "D02",
+      "project_type": "bug_fix",
+      "environment": "staging",
+      "status": "draft",
+      "law": [
+        "LAW-04",
+        "LAW-05"
+      ],
+      "tags": [],
+      "acceptance_contract": "CTR-STG-001",
+      "staging_precheck": {
+        "owner_confirmed": true,
+        "contract_validated": true,
+        "rollback_plan_ack": true,
+        "audit_trail_ready": true,
+        "staging_policy_acks": {
+          "allow_optional_mapping": true,
+          "high_risk_requires_approval": true,
+          "allow_simulation_only_on_violation": true,
+          "strict_law_bundle": true,
+          "deny_on_missing_audit": true,
+          "max_retry": true,
+          "risk_alert_cooldown_minutes": true,
+          "risk_alert_trigger_score": true
+        }
+      },
+      "last_activity": "2026-04-15T16:26:51.565821+00:00"
+    },
+    {
+      "id": "JYIS-2026-2543",
+      "name": "审批待办项目",
+      "domain": "D03",
+      "project_type": "new_feature",
+      "environment": "dev",
+      "status": "pending_approval",
+      "law": [
+        "LAW-05"
+      ],
+      "tags": [],
+      "acceptance_contract": "dev-placeholder-contract",
+      "staging_precheck": null,
+      "last_activity": "2026-04-15T16:26:53.742884+00:00",
+      "approval": {
+        "chain": [
+          "L3",
+          "L2",
+          "L1"
+        ],
+        "step": 0,
+        "submitted_at": "2026-04-15T16:26:53.705336+00:00",
+        "history": [
+          {
+            "action": "submit",
+            "at": "2026-04-15T16:26:53.705354+00:00"
+          }
+        ]
+      }
+    },
+    {
+      "id": "JYIS-2026-2544",
+      "name": "审批动作项目",
+      "domain": "D03",
+      "project_type": "new_feature",
+      "environment": "dev",
+      "status": "rejected",
+      "law": [
+        "LAW-05"
+      ],
+      "tags": [],
+      "acceptance_contract": "dev-placeholder-contract",
+      "staging_precheck": null,
+      "last_activity": "2026-04-15T16:26:54.587844+00:00",
+      "approval": {
+        "chain": [
+          "L3",
+          "L2"
+        ],
+        "step": 1,
+        "submitted_at": "2026-04-15T16:26:54.131403+00:00",
+        "history": [
+          {
+            "action": "submit",
+            "at": "2026-04-15T16:26:54.131421+00:00"
+          },
+          {
+            "action": "approve",
+            "level": "L3",
+            "at": "2026-04-15T16:26:54.268992+00:00"
+          },
+          {
+            "action": "reject",
+            "level": "L2",
+            "reason": "人工驳回验证",
+            "at": "2026-04-15T16:26:54.410050+00:00"
+          }
+        ],
+        "rejected_at": "2026-04-15T16:26:54.541724+00:00",
+        "reject_reason": "人工驳回验证"
+      }
+    },
+    {
+      "id": "JYIS-2026-2545",
+      "name": "标签项目",
+      "domain": "D03",
+      "project_type": "new_feature",
+      "environment": "dev",
+      "status": "draft",
+      "law": [
+        "LAW-05"
+      ],
+      "tags": [
+        "v1.1",
+        "analytics"
+      ],
+      "acceptance_contract": "dev-placeholder-contract",
+      "staging_precheck": null,
+      "last_activity": "2026-04-15T16:26:54.693340+00:00"
+    },
+    {
+      "id": "JYIS-2026-2546",
+      "name": "活动时间项目",
+      "domain": "D03",
+      "project_type": "optimization",
+      "environment": "dev",
+      "status": "draft",
+      "law": [
+        "LAW-05"
+      ],
+      "tags": [],
+      "acceptance_contract": "dev-placeholder-contract",
+      "staging_precheck": null,
+      "last_activity": "2026-04-15T16:26:55.148794+00:00"
+    },
+    {
+      "id": "JYIS-2026-2547",
+      "name": "DecisionAudit",
+      "domain": "D03",
+      "project_type": "new_feature",
+      "environment": "dev",
+      "status": "draft",
+      "law": [
+        "LAW-05"
+      ],
+      "tags": [],
+      "acceptance_contract": "dev-placeholder-contract",
+      "staging_precheck": null,
+      "last_activity": "2026-04-15T16:26:57.389759+00:00"
     }
   ],
   "chat_sessions": [
@@ -50101,6 +50300,54 @@
         },
         {
           "id": "msg-2d0aaf4875",
+          "role": "assistant",
+          "content": "主脑已收到：history test"
+        }
+      ]
+    },
+    {
+      "id": "sess-49d067e077",
+      "title": "day1",
+      "messages": [
+        {
+          "id": "msg-19a7762c6b",
+          "role": "user",
+          "content": "hello"
+        },
+        {
+          "id": "msg-498f603411",
+          "role": "assistant",
+          "content": "主脑已收到：hello"
+        }
+      ]
+    },
+    {
+      "id": "sess-957f6bf5e0",
+      "title": "persist",
+      "messages": [
+        {
+          "id": "msg-bd1073349a",
+          "role": "user",
+          "content": "stateful"
+        },
+        {
+          "id": "msg-7c275d62f9",
+          "role": "assistant",
+          "content": "主脑已收到：stateful"
+        }
+      ]
+    },
+    {
+      "id": "sess-86b9a5ca4d",
+      "title": "history-api",
+      "messages": [
+        {
+          "id": "msg-bc67ca3854",
+          "role": "user",
+          "content": "history test"
+        },
+        {
+          "id": "msg-295055d718",
           "role": "assistant",
           "content": "主脑已收到：history test"
         }
@@ -100351,6 +100598,145 @@
       "start_date": null,
       "end_date": null,
       "completed_at": null
+    },
+    {
+      "id": "task-bbfb16b34c",
+      "project_id": "JYIS-2026-2540",
+      "name": "r1",
+      "description": "",
+      "priority": "P2",
+      "status": "blocked",
+      "progress": 0,
+      "parent_id": null,
+      "assignee_level": null,
+      "assignee_role": null,
+      "assignee_id": null,
+      "estimated_hours": null,
+      "actual_hours": null,
+      "dependencies": [],
+      "start_date": null,
+      "end_date": "2026-01-01",
+      "completed_at": null
+    },
+    {
+      "id": "task-05abe3218b",
+      "project_id": "JYIS-2026-2540",
+      "name": "r2",
+      "description": "",
+      "priority": "P2",
+      "status": "in_progress",
+      "progress": 0,
+      "parent_id": null,
+      "assignee_level": null,
+      "assignee_role": null,
+      "assignee_id": null,
+      "estimated_hours": null,
+      "actual_hours": null,
+      "dependencies": [],
+      "start_date": null,
+      "end_date": "2026-01-01",
+      "completed_at": null
+    },
+    {
+      "id": "task-ac87f5df2d",
+      "project_id": "JYIS-2026-2546",
+      "name": "activity-task",
+      "description": "",
+      "priority": "P2",
+      "status": "pending",
+      "progress": 10,
+      "parent_id": null,
+      "assignee_level": null,
+      "assignee_role": null,
+      "assignee_id": null,
+      "estimated_hours": null,
+      "actual_hours": null,
+      "dependencies": [],
+      "start_date": null,
+      "end_date": null,
+      "completed_at": null
+    },
+    {
+      "id": "task-deee39765c",
+      "project_id": "JYIS-2026-2547",
+      "name": "明确受众与渠道假设",
+      "description": "【D05】推进项目里程碑，并同步营销投放策略",
+      "priority": "P0",
+      "status": "pending",
+      "progress": 0,
+      "parent_id": null,
+      "assignee_level": null,
+      "assignee_role": null,
+      "assignee_id": null,
+      "estimated_hours": null,
+      "actual_hours": null,
+      "dependencies": [],
+      "start_date": null,
+      "end_date": null,
+      "completed_at": null
+    },
+    {
+      "id": "task-955957c867",
+      "project_id": "JYIS-2026-2547",
+      "name": "形成实验与度量指标",
+      "description": "【D05】推进项目里程碑，并同步营销投放策略",
+      "priority": "P1",
+      "status": "pending",
+      "progress": 0,
+      "parent_id": null,
+      "assignee_level": null,
+      "assignee_role": null,
+      "assignee_id": null,
+      "estimated_hours": null,
+      "actual_hours": null,
+      "dependencies": [
+        "task-deee39765c"
+      ],
+      "start_date": null,
+      "end_date": null,
+      "completed_at": null
+    },
+    {
+      "id": "task-e32aa6c691",
+      "project_id": "JYIS-2026-2547",
+      "name": "定义转化漏斗与复盘节奏",
+      "description": "【D05】推进项目里程碑，并同步营销投放策略",
+      "priority": "P1",
+      "status": "pending",
+      "progress": 0,
+      "parent_id": null,
+      "assignee_level": null,
+      "assignee_role": null,
+      "assignee_id": null,
+      "estimated_hours": null,
+      "actual_hours": null,
+      "dependencies": [
+        "task-955957c867"
+      ],
+      "start_date": null,
+      "end_date": null,
+      "completed_at": null
+    },
+    {
+      "id": "task-54e5323dfc",
+      "project_id": "JYIS-2026-2547",
+      "name": "对齐目标与范围",
+      "description": "【D03】推进项目里程碑，并同步营销投放策略",
+      "priority": "P0",
+      "status": "pending",
+      "progress": 0,
+      "parent_id": null,
+      "assignee_level": null,
+      "assignee_role": null,
+      "assignee_id": null,
+      "estimated_hours": null,
+      "actual_hours": null,
+      "dependencies": [
+        "task-e32aa6c691"
+      ],
+      "start_date": null,
+      "end_date": null,
+      "completed_at": null
     }
   ],
   "skills": [
@@ -100392,12 +100778,28 @@
       "description": "",
       "category": "agent",
       "level": "middle",
+      "linked_agent_ids": []
+    },
+    {
+      "id": "skl-ff1b6f95d2",
+      "name": "agent-skill-b",
+      "description": "",
+      "category": "agent",
+      "level": "senior",
+      "linked_agent_ids": []
+    },
+    {
+      "id": "skl-0dadb08c8e",
+      "name": "agent-skill-a",
+      "description": "",
+      "category": "agent",
+      "level": "middle",
       "linked_agent_ids": [
         "agent-ceo"
       ]
     },
     {
-      "id": "skl-ff1b6f95d2",
+      "id": "skl-aa6f60b3a0",
       "name": "agent-skill-b",
       "description": "",
       "category": "agent",
@@ -104049,6 +104451,22 @@
       "project_id": null,
       "status": "open",
       "created_at": "2026-04-15T16:21:16.605372+00:00"
+    },
+    {
+      "id": "dlg-10307c5219",
+      "from_agent_id": "agent-ceo",
+      "to_agent_id": "agent-ceo",
+      "objective": "audit prefix filter",
+      "contract": {
+        "acceptance_criteria": "完成审计前缀过滤验证",
+        "deliverables": [
+          "过滤结果截图"
+        ],
+        "due_date": null
+      },
+      "project_id": null,
+      "status": "open",
+      "created_at": "2026-04-15T16:25:07.443591+00:00"
     }
   ],
   "working_memories": [
@@ -104867,6 +105285,24 @@
       "agent_id": "agent-ceo",
       "content": "memory-b",
       "created_at": "2026-04-15T16:23:01.425653+00:00"
+    },
+    {
+      "id": "wm-71891ef8e7",
+      "agent_id": "agent-ceo",
+      "content": "[SELF_REFLECTION] agent=agent-ceo; role=UNKNOWN; status=unknown; instruction=请总结今天执行偏差并给出改进; improvement=clarify_next_actions_and_risk_owner",
+      "created_at": "2026-04-15T16:26:50.948341+00:00"
+    },
+    {
+      "id": "wm-794f4c2033",
+      "agent_id": "agent-ceo",
+      "content": "memory-a",
+      "created_at": "2026-04-15T16:26:52.624165+00:00"
+    },
+    {
+      "id": "wm-4f64e10625",
+      "agent_id": "agent-ceo",
+      "content": "memory-b",
+      "created_at": "2026-04-15T16:26:52.754681+00:00"
     }
   ],
   "project_discussions": [
@@ -105989,6 +106425,34 @@
       "author": "ceo-system",
       "body": "[CEO_DECISION][APPLY] next_action_hint=EXECUTION_OK_CONTINUE; recommended_mode=apply_now; ui_priority=p2; confidence_band=high; risk_alignment=consistent; risk_diff=0; recommended_actions=apply_now, track_execution_result",
       "created_at": "2026-04-15T16:23:05.956560+00:00"
+    },
+    {
+      "id": "pdc-7bccd7209c",
+      "project_id": "JYIS-2026-2540",
+      "author": "system-risk-bot",
+      "body": "[PROJECT_RISK_ALERT] project=analytics-demo; risk_score=8; blocked=1; overdue=2; stalled=1; action=review_risk_board_and_assign_owner",
+      "created_at": "2026-04-15T16:25:08.215042+00:00"
+    },
+    {
+      "id": "pdc-02d126f6b2",
+      "project_id": "JYIS-2026-2546",
+      "author": "qa",
+      "body": "touch activity",
+      "created_at": "2026-04-15T16:26:55.148373+00:00"
+    },
+    {
+      "id": "pdc-c3fb1d837b",
+      "project_id": "JYIS-2026-2547",
+      "author": "ceo-system",
+      "body": "[CEO_DECISION][DRY_RUN] next_action_hint=READY_TO_APPLY; recommended_mode=apply_now; ui_priority=p2; confidence_band=high; risk_alignment=consistent; risk_diff=0; recommended_actions=apply_now, track_execution_result",
+      "created_at": "2026-04-15T16:26:56.665083+00:00"
+    },
+    {
+      "id": "pdc-80c7997eee",
+      "project_id": "JYIS-2026-2547",
+      "author": "ceo-system",
+      "body": "[CEO_DECISION][APPLY] next_action_hint=EXECUTION_OK_CONTINUE; recommended_mode=apply_now; ui_priority=p2; confidence_band=high; risk_alignment=consistent; risk_diff=0; recommended_actions=apply_now, track_execution_result",
+      "created_at": "2026-04-15T16:26:57.389164+00:00"
     }
   ],
   "marketing_metrics": {
@@ -108941,6 +109405,55 @@
       "secret": "",
       "created_at": "2026-04-15T16:22:59.323320+00:00",
       "updated_at": "2026-04-15T16:22:59.323337+00:00"
+    },
+    {
+      "id": "wh-d2f239852c",
+      "name": "build-callback",
+      "url": "https://example.com/hook",
+      "events": [
+        "project.updated",
+        "task.created"
+      ],
+      "enabled": true,
+      "secret": "abc",
+      "created_at": "2026-04-15T16:26:49.910505+00:00",
+      "updated_at": "2026-04-15T16:26:49.910520+00:00"
+    },
+    {
+      "id": "wh-d93ecb2ccf",
+      "name": "list-hook-enabled",
+      "url": "https://example.com/enabled",
+      "events": [
+        "project.updated"
+      ],
+      "enabled": true,
+      "secret": "",
+      "created_at": "2026-04-15T16:26:50.005244+00:00",
+      "updated_at": "2026-04-15T16:26:50.005260+00:00"
+    },
+    {
+      "id": "wh-738ab45eb3",
+      "name": "list-hook-disabled",
+      "url": "https://example.com/disabled",
+      "events": [
+        "task.created"
+      ],
+      "enabled": false,
+      "secret": "",
+      "created_at": "2026-04-15T16:26:50.103925+00:00",
+      "updated_at": "2026-04-15T16:26:50.103943+00:00"
+    },
+    {
+      "id": "wh-e9fc316c0b",
+      "name": "get-hook",
+      "url": "https://example.com/get",
+      "events": [
+        "project.updated"
+      ],
+      "enabled": true,
+      "secret": "",
+      "created_at": "2026-04-15T16:26:50.635313+00:00",
+      "updated_at": "2026-04-15T16:26:50.635330+00:00"
     }
   ]
 }

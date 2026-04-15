@@ -1652,6 +1652,15 @@ def analytics_reports(
     git_success = sum(1 for e in git_events if str((e.get("context") or {}).get("status", "")).lower() == "success")
     git_failure = sum(1 for e in git_events if str((e.get("context") or {}).get("status", "")).lower() == "failure")
     git_skipped = sum(1 for e in git_events if str((e.get("context") or {}).get("status", "")).lower() == "skipped")
+    git_audit_delivery_failed = 0
+    git_audit_delivery_success = 0
+    for e in git_events:
+        context = e.get("context") or {}
+        audit_delivery = str(context.get("audit_delivery", "")).strip().lower()
+        if audit_delivery == "failed":
+            git_audit_delivery_failed += 1
+        elif audit_delivery == "success":
+            git_audit_delivery_success += 1
     failure_reason_counter: dict[str, int] = {}
     for e in git_events:
         if str((e.get("context") or {}).get("status", "")).lower() != "failure":
@@ -1675,6 +1684,8 @@ def analytics_reports(
     git_success_rate = round((git_success / git_total) * 100, 1) if git_total > 0 else 0.0
     git_failure_rate = round((git_failure / git_total) * 100, 1) if git_total > 0 else 0.0
     git_skipped_rate = round((git_skipped / git_total) * 100, 1) if git_total > 0 else 0.0
+    git_audit_delivery_failure_rate = round((git_audit_delivery_failed / git_total) * 100, 1) if git_total > 0 else 0.0
+    git_audit_delivery_success_rate = round((git_audit_delivery_success / git_total) * 100, 1) if git_total > 0 else 0.0
     git_net_success_rate = round(((git_success - git_failure) / git_total) * 100, 1) if git_total > 0 else 0.0
     git_event_density_per_day = round(git_total / max(1, int(days)), 2)
     git_success_density_per_day = round(git_success / max(1, int(days)), 2)
@@ -1733,6 +1744,10 @@ def analytics_reports(
         "git_sync_success_rate": git_success_rate,
         "git_sync_failure_rate": git_failure_rate,
         "git_sync_skipped_rate": git_skipped_rate,
+        "git_sync_audit_delivery_failed_count": git_audit_delivery_failed,
+        "git_sync_audit_delivery_success_count": git_audit_delivery_success,
+        "git_sync_audit_delivery_failure_rate": git_audit_delivery_failure_rate,
+        "git_sync_audit_delivery_success_rate": git_audit_delivery_success_rate,
         "git_sync_net_success_rate": git_net_success_rate,
         "git_sync_failure_pressure_index": git_sync_failure_pressure_index,
         "git_sync_event_density_per_day": git_event_density_per_day,

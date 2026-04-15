@@ -434,7 +434,27 @@ def test_analytics_reports_project_execution_and_ops_risk():
             "status": "failure",
             "source": "git_auto_sync.ps1",
             "environment": "dev",
-            "context": {"status": "failure", "branch": "main", "push_attempts": 2},
+            "context": {
+                "status": "failure",
+                "branch": "main",
+                "push_attempts": 2,
+                "audit_delivery": "failed",
+            },
+        },
+    )
+    _ = client.post(
+        "/api/v1/ops/git-sync/events",
+        json={
+            "branch": "main",
+            "status": "success",
+            "source": "git_sync_once.ps1",
+            "environment": "dev",
+            "context": {
+                "status": "success",
+                "branch": "main",
+                "push_attempts": 1,
+                "audit_delivery": "success",
+            },
         },
     )
 
@@ -457,6 +477,10 @@ def test_analytics_reports_project_execution_and_ops_risk():
     assert "git_sync_success_rate" in opsb
     assert "git_sync_failure_rate" in opsb
     assert "git_sync_skipped_rate" in opsb
+    assert "git_sync_audit_delivery_failed_count" in opsb
+    assert "git_sync_audit_delivery_success_count" in opsb
+    assert "git_sync_audit_delivery_failure_rate" in opsb
+    assert "git_sync_audit_delivery_success_rate" in opsb
     assert "git_sync_net_success_rate" in opsb
     assert "git_sync_failure_pressure_index" in opsb
     assert "git_sync_event_density_per_day" in opsb
@@ -483,6 +507,10 @@ def test_analytics_reports_project_execution_and_ops_risk():
     assert isinstance(opsb["git_sync_success_rate"], float)
     assert isinstance(opsb["git_sync_failure_rate"], float)
     assert isinstance(opsb["git_sync_skipped_rate"], float)
+    assert isinstance(opsb["git_sync_audit_delivery_failed_count"], int)
+    assert isinstance(opsb["git_sync_audit_delivery_success_count"], int)
+    assert isinstance(opsb["git_sync_audit_delivery_failure_rate"], float)
+    assert isinstance(opsb["git_sync_audit_delivery_success_rate"], float)
     assert isinstance(opsb["git_sync_net_success_rate"], float)
     assert isinstance(opsb["git_sync_failure_pressure_index"], float)
     assert isinstance(opsb["git_sync_event_density_per_day"], float)

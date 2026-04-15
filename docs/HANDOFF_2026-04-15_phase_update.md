@@ -510,3 +510,15 @@
         - `git_sync_push_attempt_sample_count`
       - 增强时区稳定性：当运行环境缺少 IANA tzdata 时，为 `UTC/GMT/Asia/Shanghai` 提供兜底映射，避免 `git-sync/summary` 因时区解析失败返回 400。
       - 补充最小回归断言并修正审批分页断言（扩大 `limit` 以避免数据累积导致的偶发漏检），保持兼容增强。
+
+62. 运营风险报告补充 Git 同步审计投递可观测指标（完成后增强）
+    - 文件：`backend/app/api/routes.py`、`backend/tests/test_api_smoke.py`
+    - 变更：
+      - `GET /api/v1/analytics/reports?report_type=ops_risk` 新增：
+        - `git_sync_audit_delivery_failed_count`
+        - `git_sync_audit_delivery_success_count`
+        - `git_sync_audit_delivery_failure_rate`
+        - `git_sync_audit_delivery_success_rate`
+      - 口径：读取 `git_sync_status` 事件 `context.audit_delivery`（`failed|success`）聚合计数与占比，分母为报告窗口内 `git_sync_event_count`。
+      - 目标：在“同步成功/失败”之外，补齐“审计上报通道本身是否稳定”的观测维度，便于排查“主链路成功但审计旁路不稳定”场景。
+      - 补充最小回归断言，校验新增字段存在且类型正确（`int`/`float`），保持返回结构兼容增强。
