@@ -674,3 +674,6 @@
         - `last_git_sync_audit_delivery_invalid_at`、`minutes_since_last_git_sync_audit_delivery_invalid`
       - 运营报告侧非法计数仅统计 `context.status` 为 `success|failure|skipped` 的事件，与摘要主循环口径一致。
       - 最小回归：`test_git_sync_summary_endpoint`、`test_analytics_reports_project_execution_and_ops_risk` 注入非法 `audit_delivery` 样例并断言新字段。
+
+76. 条目 75 同步远端记录（运维追溯）
+    - 本地提交：`d575df1`（`feat(ops): audit_delivery invalid metrics for git summary and ops_risk`），已成功推送至 `origin/main`（首轮 `git push` 曾遇 `Recv failure: Connection was reset`，重试后成功）。
