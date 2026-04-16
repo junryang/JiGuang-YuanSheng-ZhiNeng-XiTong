@@ -1254,3 +1254,19 @@
     - 推送结果：
       - 第 1 次推送失败：`Recv failure: Connection was reset`
       - 第 2 次推送成功：`331c11a..30b38eb  main -> main`
+
+128. Day3 门禁回归与发布前收口快照更新（Day4 收口）
+    - 文件：`docs/DAY3_POLICY_GATE_REGRESSION_REPORT_v1.0.md`、`docs/DAY3_POLICY_GATE_EXEC_SUMMARY_v1.0.md`
+    - 更新内容：
+      - 将全量回归通过数从 `138 passed` 更新为本轮实测的 `191 passed`
+      - 同步更新一页摘要中“矩阵专项/全量”通过数口径，保持统计一致
+    - 本轮回归执行：
+      - Day3 门禁矩阵（marker）：`cd backend && python -m pytest -m day3_gate -q --tb=short`
+      - 结果：`33 passed, 158 deselected`
+      - 全量回归：`cd backend && python -m pytest tests/ -q --tb=short`
+      - 结果：`191 passed in 194.42s (exit_code=0)`
+    - 统计口径：
+      - `day3_gate` 仅执行 Day3 策略门禁矩阵/一致性相关用例
+      - 全量回归统计 `tests/` 下所有用例的通过数，用于发布前 Go/No-Go 的“稳定性证明”
+    - 推送结果：
+      - 待回填（本地提交并 `git push origin main` 后补齐失败原因与成功区间）
