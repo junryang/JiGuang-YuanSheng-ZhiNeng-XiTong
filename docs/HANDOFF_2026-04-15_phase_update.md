@@ -1222,7 +1222,7 @@
 126. 条目 125 同步远端记录（运维追溯）
     - 本地提交：
       - `527a433`（`feat(ops): add git sync silence severity color rgb fields`）
-      - `待回填`（`docs(handoff): append items 125-126 for silence severity color rgb`）
+      - `d39b533`（`docs(handoff): append items 125-126 for silence severity color rgb`）
     - 推送结果：
       - 代码提交：`512dce7..527a433  main -> main`
-      - 文档提交：`待回填`
+      - 文档推送：第 1 次失败：`Could not resolve host: github.com`；第 2 次成功：`527a433..d39b533  main -> main`
