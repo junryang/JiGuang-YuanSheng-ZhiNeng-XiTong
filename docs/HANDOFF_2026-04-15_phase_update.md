@@ -885,3 +885,25 @@
       - 第 2 次重试成功：`d8f8dd9..e5b7206  main -> main`
     - 处置结论：
       - 属于瞬时 DNS/网络波动，代码与文档已成功推送到远端 `main`。
+
+99. Git 同步摘要与运营风险报告补充静默状态排序字段（完成后增强）
+    - 文件：`backend/app/api/routes.py`、`backend/tests/test_api_smoke.py`
+    - 接口字段（兼容追加，不破坏既有字段）：
+      - `GET /api/v1/ops/git-sync/summary` 新增：`sync_silence_state_rank`（`int`）
+      - `GET /api/v1/analytics/reports?report_type=ops_risk` 新增：`git_sync_event_silence_state_rank`（`int`）
+    - 统计口径：
+      - 与 `*_silence_state` 一一对应：
+        - `within` → `0`
+        - `overdue` → `1`
+        - `missing` → `2`
+      - 目的：便于看板/告警按严重程度排序与阈值比较（无需前端/BI 再映射）。
+    - 测试覆盖：
+      - 最小回归：`python -m pytest tests/test_api_smoke.py -q --tb=short`
+      - 结果：`48 passed in 138.48s`
+      - 新增断言：字段存在、类型为 `int` 且取值集合为 `{0,1,2}`。
+    - 推送结果：
+      - 见条目 100。
+
+100. 条目 99 同步远端记录（运维追溯）
+    - 本地提交：（待 commit 后回填）
+    - 推送结果：（待 push/重试后回填）
