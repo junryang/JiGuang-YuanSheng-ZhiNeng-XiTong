@@ -905,5 +905,8 @@
       - 见条目 100。
 
 100. 条目 99 同步远端记录（运维追溯）
-    - 本地提交：（待 commit 后回填）
-    - 推送结果：（待 push/重试后回填）
+    - 本地提交：
+      - `552c9e6`（`feat(ops): add git sync silence state rank metrics`）
+      - `f6f7f79`（`docs(handoff): append items 99-100 for silence state ranks`）
+    - 推送结果：
+      - `git push origin main` 一次成功：`0e32de2..f6f7f79  main -> main`
