@@ -832,3 +832,25 @@
       - 第 3 次重试成功：`06515ab..2096d26  main -> main`
     - 处置结论：
       - 属于瞬时 DNS/网络波动，代码与文档已成功推送到远端 `main`。
+
+95. Git 同步摘要与运营风险报告补充静默余量分钟数字段（完成后增强）
+    - 文件：`backend/app/api/routes.py`、`backend/tests/test_api_smoke.py`
+    - 接口字段（兼容追加，不破坏既有字段）：
+      - `GET /api/v1/ops/git-sync/summary` 新增：`sync_silence_headroom_minutes`（`float|null`）
+      - `GET /api/v1/analytics/reports?report_type=ops_risk` 新增：`git_sync_event_silence_headroom_minutes`（`float|null`）
+    - 统计口径：
+      - 与 `*_silence_overdue_minutes` 对称：`max(0, silence_threshold_minutes - minutes_since_last_event)`，保留 1 位小数；
+      - 当最近事件不存在（`minutes_since_last_event=null`）时返回 `null`；
+      - 与超阈值侧关系：在「有最近事件时间戳」前提下，恒有 `overdue_minutes` 与 `headroom_minutes` 其一为 0（另一为非负），二者不同时为正。
+    - 测试覆盖：
+      - 最小回归：`python -m pytest tests/test_api_smoke.py -q --tb=short`
+      - 结果：`48 passed in 140.94s`
+      - 新增断言：两接口字段存在且类型为 `float`。
+    - 推送结果：
+      - 见条目 96。
+
+96. 条目 95 同步远端记录（运维追溯）
+    - 本地提交：
+      - `1cbca9b`（`feat(ops): add git sync silence headroom minute metrics`）
+      - `docs(handoff)`：`append items 95-96 for silence headroom metrics`（与条目 95 文档同批落盘；具体哈希以推送后 `git log -2 --oneline` 为准，避免交接文档自嵌提交 ID）
+    - 推送结果：（待 `git push` 后回填）
