@@ -1120,3 +1120,10 @@
 116. 条目 115 同步远端记录（运维追溯）
     - 本地提交：（待回填）
     - 推送结果：（待 push/重试后回填）
+
+117. 条目 115-116 同步远端记录补全（运维追溯）
+    - 本地提交：
+      - `b0c1e32`（`feat(ops): add git sync silence severity level color fields`）
+      - `f2d2e05`（`docs(handoff): append items 115-116 for silence severity level colors`）
+    - 推送结果：
+      - `git push origin main` 一次成功：`ef285ca..f2d2e05  main -> main`
