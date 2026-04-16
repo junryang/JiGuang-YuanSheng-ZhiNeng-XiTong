@@ -393,6 +393,8 @@ def test_git_sync_summary_endpoint():
     assert body["sync_silence_severity_level_label"] in {"低", "中", "高", "缺失"}
     assert "sync_silence_severity_level_color" in body
     assert body["sync_silence_severity_level_color"] in {"#9CA3AF", "#EF4444", "#FBBF24", "#22C55E"}
+    assert "sync_silence_state_color" in body
+    assert body["sync_silence_state_color"] in {"#9CA3AF", "#EF4444", "#FBBF24", "#22C55E"}
     assert isinstance(body["consecutive_failure_streak"], int)
     assert isinstance(body["consecutive_non_success_streak"], int)
     assert body["sync_health_level"] in {"healthy", "warning", "high_risk"}
@@ -792,6 +794,8 @@ def test_analytics_reports_project_execution_and_ops_risk():
     assert opsb["git_sync_event_silence_severity_level_label"] in {"低", "中", "高", "缺失"}
     assert "git_sync_event_silence_severity_level_color" in opsb
     assert opsb["git_sync_event_silence_severity_level_color"] in {"#9CA3AF", "#EF4444", "#FBBF24", "#22C55E"}
+    assert "git_sync_event_silence_state_color" in opsb
+    assert opsb["git_sync_event_silence_state_color"] in {"#9CA3AF", "#EF4444", "#FBBF24", "#22C55E"}
     assert isinstance(opsb["last_git_sync_success_at"], str)
     assert isinstance(opsb["minutes_since_last_git_sync_success"], float)
     assert isinstance(opsb["last_git_sync_failure_at"], str)

@@ -1702,6 +1702,8 @@ def git_sync_summary(
         "sync_silence_severity_level_rank": sync_silence_severity_level_rank,
         "sync_silence_severity_level_label": sync_silence_severity_level_label,
         "sync_silence_severity_level_color": sync_silence_severity_level_color,
+        # UI state quick-color mapping: reuse severity color to keep semantics consistent.
+        "sync_silence_state_color": sync_silence_severity_level_color,
         "consecutive_failure_streak": consecutive_failure_streak,
         "consecutive_non_success_streak": consecutive_non_success_streak,
         "sync_health_level": sync_health_level,
@@ -2186,6 +2188,8 @@ def analytics_reports(
         "git_sync_event_silence_severity_level_rank": git_sync_event_silence_severity_level_rank,
         "git_sync_event_silence_severity_level_label": git_sync_event_silence_severity_level_label,
         "git_sync_event_silence_severity_level_color": git_sync_event_silence_severity_level_color,
+        # UI state quick-color mapping: reuse severity color to keep semantics consistent.
+        "git_sync_event_silence_state_color": git_sync_event_silence_severity_level_color,
         "last_git_sync_success_at": last_git_sync_success_at.isoformat() if last_git_sync_success_at else None,
         "minutes_since_last_git_sync_success": _minutes_since(last_git_sync_success_at, now),
         "last_git_sync_failure_at": last_git_sync_failure_at.isoformat() if last_git_sync_failure_at else None,
