@@ -287,6 +287,7 @@ def test_git_sync_summary_endpoint():
     assert "minutes_since_last_event" in body
     assert "sync_silence_threshold_minutes" in body
     assert "sync_silence_warning" in body
+    assert "sync_silence_overdue_minutes" in body
     assert "consecutive_failure_streak" in body
     assert "consecutive_non_success_streak" in body
     assert "sync_health_level" in body
@@ -365,6 +366,7 @@ def test_git_sync_summary_endpoint():
     assert isinstance(body["minutes_since_last_event"], float)
     assert isinstance(body["sync_silence_threshold_minutes"], int)
     assert isinstance(body["sync_silence_warning"], bool)
+    assert isinstance(body["sync_silence_overdue_minutes"], float)
     assert isinstance(body["consecutive_failure_streak"], int)
     assert isinstance(body["consecutive_non_success_streak"], int)
     assert body["sync_health_level"] in {"healthy", "warning", "high_risk"}
@@ -670,6 +672,7 @@ def test_analytics_reports_project_execution_and_ops_risk():
     assert "minutes_since_last_git_sync_event" in opsb
     assert "git_sync_event_silence_threshold_minutes" in opsb
     assert "git_sync_event_silence_warning" in opsb
+    assert "git_sync_event_silence_overdue_minutes" in opsb
     assert "last_git_sync_success_at" in opsb
     assert "minutes_since_last_git_sync_success" in opsb
     assert "last_git_sync_failure_at" in opsb
@@ -736,6 +739,7 @@ def test_analytics_reports_project_execution_and_ops_risk():
     assert isinstance(opsb["minutes_since_last_git_sync_event"], float)
     assert isinstance(opsb["git_sync_event_silence_threshold_minutes"], int)
     assert isinstance(opsb["git_sync_event_silence_warning"], bool)
+    assert isinstance(opsb["git_sync_event_silence_overdue_minutes"], float)
     assert isinstance(opsb["last_git_sync_success_at"], str)
     assert isinstance(opsb["minutes_since_last_git_sync_success"], float)
     assert isinstance(opsb["last_git_sync_failure_at"], str)
