@@ -910,3 +910,23 @@
       - `f6f7f79`（`docs(handoff): append items 99-100 for silence state ranks`）
     - 推送结果：
       - `git push origin main` 一次成功：`0e32de2..f6f7f79  main -> main`
+
+101. Git 同步摘要与运营风险报告补充静默事件存在布尔字段（完成后增强）
+    - 文件：`backend/app/api/routes.py`、`backend/tests/test_api_smoke.py`
+    - 接口字段（兼容追加，不破坏既有字段）：
+      - `GET /api/v1/ops/git-sync/summary` 新增：`sync_silence_event_present`（`bool`）
+      - `GET /api/v1/analytics/reports?report_type=ops_risk` 新增：`git_sync_event_silence_event_present`（`bool`）
+    - 统计口径：
+      - 当 `minutes_since_last_*` 可计算时返回 `true`
+      - 当窗口内无事件或无法计算分钟数时返回 `false`
+      - 目标：与既有 `*_silence_state` / `*_silence_state_rank` 形成布尔-枚举-排序三层观测，方便不同消费端按最简模型取值
+    - 测试覆盖：
+      - 最小回归：`python -m pytest tests/test_api_smoke.py -q --tb=short`
+      - 结果：`48 passed in 138.79s`
+      - 新增断言：字段存在且类型为 `bool`
+    - 推送结果：
+      - 见条目 102。
+
+102. 条目 101 同步远端记录（运维追溯）
+    - 本地提交：（待 commit 后回填）
+    - 推送结果：（待 push/重试后回填）
