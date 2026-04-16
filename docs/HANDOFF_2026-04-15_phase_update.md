@@ -1252,4 +1252,5 @@
       - 执行：`cd backend && python -m pytest tests/test_api_smoke.py -q --tb=short`
       - 结果：`48 passed in 151.43s`（exit_code=0）
     - 推送结果：
-      - 待回填（本地提交并执行 `git push origin main` 后补齐失败原因/成功区间）
+      - 第 1 次推送失败：`Recv failure: Connection was reset`
+      - 第 2 次推送成功：`331c11a..30b38eb  main -> main`
