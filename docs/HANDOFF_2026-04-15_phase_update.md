@@ -1157,3 +1157,10 @@
     - 推送结果：
       - 首次 `git push origin main` 失败：`Recv failure: Connection was reset`
       - 第 2 次重试成功：`5d3f69b..f8b55ce  main -> main`
+
+121. 条目 120 追溯提交（运维追溯）
+    - 本地提交：
+      - `2d3a31c`（`docs(handoff): finalize item 120 push trace for state colors`）
+    - 推送结果：
+      - 首次推送失败：`Recv failure: Connection was reset`
+      - 重试成功：`f8b55ce..2d3a31c  main -> main`
