@@ -928,5 +928,11 @@
       - 见条目 102。
 
 102. 条目 101 同步远端记录（运维追溯）
-    - 本地提交：（待 commit 后回填）
-    - 推送结果：（待 push/重试后回填）
+    - 本地提交：
+      - `108390a`（`feat(ops): add git sync silence event-present flags`）
+      - `65559ee`（`docs(handoff): append items 101-102 for silence event flags`）
+    - 推送结果：
+      - 首次 `git push origin main` 失败：`Could not resolve host: github.com`
+      - 第 2 次重试失败：`schannel: failed to receive handshake, SSL/TLS connection failed`
+      - 第 3 次重试失败：`Recv failure: Connection was reset`
+      - 第 4 次重试成功：`53c0470..65559ee  main -> main`
