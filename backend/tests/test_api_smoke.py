@@ -291,6 +291,7 @@ def test_git_sync_summary_endpoint():
     assert "sync_silence_overdue_rate" in body
     assert "sync_silence_headroom_minutes" in body
     assert "sync_silence_state" in body
+    assert "sync_silence_state_rank" in body
     assert "consecutive_failure_streak" in body
     assert "consecutive_non_success_streak" in body
     assert "sync_health_level" in body
@@ -373,6 +374,8 @@ def test_git_sync_summary_endpoint():
     assert isinstance(body["sync_silence_overdue_rate"], float)
     assert isinstance(body["sync_silence_headroom_minutes"], float)
     assert body["sync_silence_state"] in {"missing", "within", "overdue"}
+    assert isinstance(body["sync_silence_state_rank"], int)
+    assert body["sync_silence_state_rank"] in {0, 1, 2}
     assert isinstance(body["consecutive_failure_streak"], int)
     assert isinstance(body["consecutive_non_success_streak"], int)
     assert body["sync_health_level"] in {"healthy", "warning", "high_risk"}
@@ -682,6 +685,7 @@ def test_analytics_reports_project_execution_and_ops_risk():
     assert "git_sync_event_silence_overdue_rate" in opsb
     assert "git_sync_event_silence_headroom_minutes" in opsb
     assert "git_sync_event_silence_state" in opsb
+    assert "git_sync_event_silence_state_rank" in opsb
     assert "last_git_sync_success_at" in opsb
     assert "minutes_since_last_git_sync_success" in opsb
     assert "last_git_sync_failure_at" in opsb
@@ -752,6 +756,8 @@ def test_analytics_reports_project_execution_and_ops_risk():
     assert isinstance(opsb["git_sync_event_silence_overdue_rate"], float)
     assert isinstance(opsb["git_sync_event_silence_headroom_minutes"], float)
     assert opsb["git_sync_event_silence_state"] in {"missing", "within", "overdue"}
+    assert isinstance(opsb["git_sync_event_silence_state_rank"], int)
+    assert opsb["git_sync_event_silence_state_rank"] in {0, 1, 2}
     assert isinstance(opsb["last_git_sync_success_at"], str)
     assert isinstance(opsb["minutes_since_last_git_sync_success"], float)
     assert isinstance(opsb["last_git_sync_failure_at"], str)
