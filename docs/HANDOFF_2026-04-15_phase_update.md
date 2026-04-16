@@ -795,3 +795,14 @@
       - 新增断言：字段存在且在当前样例下类型为 `float`。
     - 推送结果：
       - 本条将在提交并推送完成后补充 SHA 与重试状态。
+
+92. 条目 91 同步远端记录（运维追溯）
+    - 本地提交：
+      - `1c86c93`（`feat(ops): add git sync silence overdue minute metrics`）
+      - `1c53764`（`docs(handoff): append item 91 for silence overdue metrics`）
+    - 推送结果：
+      - 首次 `git push origin main` 失败：`Recv failure: Connection was reset`
+      - 第 2 次重试失败：`Recv failure: Connection was reset`
+      - 第 3 次重试成功：`a12db90..1c53764  main -> main`
+    - 处置结论：
+      - 属于瞬时网络/TLS波动，代码与文档已成功推送到远端 `main`，无需回滚。
