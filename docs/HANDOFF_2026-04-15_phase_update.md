@@ -852,5 +852,9 @@
 96. 条目 95 同步远端记录（运维追溯）
     - 本地提交：
       - `1cbca9b`（`feat(ops): add git sync silence headroom minute metrics`）
-      - `docs(handoff)`：`append items 95-96 for silence headroom metrics`（与条目 95 文档同批落盘；具体哈希以推送后 `git log -2 --oneline` 为准，避免交接文档自嵌提交 ID）
-    - 推送结果：（待 `git push` 后回填）
+      - `370ef7b`（`docs(handoff): append items 95-96 for silence headroom metrics`）
+    - 推送结果：
+      - 首次 `git push origin main` 失败：`Could not resolve host: github.com`
+      - 第 2 次重试成功：`3175581..370ef7b  main -> main`
+    - 处置结论：
+      - 属于瞬时 DNS/网络波动，代码与文档已成功推送到远端 `main`。
