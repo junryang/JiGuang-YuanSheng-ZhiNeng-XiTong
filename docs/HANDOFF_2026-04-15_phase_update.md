@@ -1098,3 +1098,25 @@
     - 推送结果：
       - 首次 `git push origin main` 长时间无输出并卡住，已人工终止后重试
       - 第 2 次推送成功：`48dea22..dd36f30  main -> main`
+
+115. Git 同步摘要与运营风险报告补充静默严重度等级颜色字段（完成后增强）
+    - 文件：`backend/app/api/routes.py`、`backend/tests/test_api_smoke.py`
+    - 接口字段（兼容追加，不破坏既有字段）：
+      - `GET /api/v1/ops/git-sync/summary` 新增：`sync_silence_severity_level_color`（`string`，hex）
+      - `GET /api/v1/analytics/reports?report_type=ops_risk` 新增：`git_sync_event_silence_severity_level_color`（`string`，hex）
+    - 统计口径（映射逻辑，非计算）：
+      - `missing` → `#9CA3AF`
+      - `low` → `#22C55E`
+      - `medium` → `#FBBF24`
+      - `high` → `#EF4444`
+      - 颜色字段直接由 `*_silence_severity_level` 映射得到，保持与既有等级字段一致性。
+    - 测试覆盖：
+      - 最小回归：`python -m pytest tests/test_api_smoke.py -q --tb=short`
+      - 结果：`48 passed`
+      - 新增断言：字段存在且颜色值属于固定 hex 集合。
+    - 推送结果：
+      - 见条目 116。
+
+116. 条目 115 同步远端记录（运维追溯）
+    - 本地提交：（待回填）
+    - 推送结果：（待 push/重试后回填）
