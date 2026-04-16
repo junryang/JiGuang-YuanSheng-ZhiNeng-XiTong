@@ -719,3 +719,6 @@
       - `GET /api/v1/ops/git-sync/summary` 新增：`audit_delivery_untagged_density_per_day`（`audit_delivery_untagged_count / days`，保留 2 位小数；摘要侧恒等于 `invalid_density + empty_density`，测试中断言该恒等式）。
       - `GET /api/v1/analytics/reports?report_type=ops_risk` 新增：`git_sync_audit_delivery_untagged_density_per_day`（`git_sync_audit_delivery_untagged_count / max(1, days)`），便于与 `git_sync_event_density_per_day` 等并列观察「未携带 success|failed 审计标记」的日均强度。
       - 最小回归：字段存在性、`float` 类型及摘要侧分拆恒等校验。
+
+84. 条目 83 同步远端记录（运维追溯）
+    - 本地提交：`76dbd55`（`feat(ops): audit_delivery untagged density per day`），已推送至 `origin/main`（首轮 `git push` 曾遇 `schannel: server closed abruptly` / `Recv failure: Connection was reset`，重试后成功）。
