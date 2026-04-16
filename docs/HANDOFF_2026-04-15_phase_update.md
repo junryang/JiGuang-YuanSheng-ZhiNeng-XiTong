@@ -655,3 +655,9 @@
         - `git_sync_audit_delivery_untagged_rate`
       - 目标：与覆盖率字段互补，直接量化未携带 `success|failed` 审计投递标记的同步事件规模，便于推动脚本侧全量打点。
       - 补充最小回归断言，校验字段存在且类型正确（`int`/`float`），保持兼容增强。
+
+74. Git 自动同步远端推送失败记录（网络/TLS，非代码回退）
+    - 时间：2026-04-16（与条目 73 同轮）
+    - 本地提交：`2f55dfd`（`chore(sync): auto sync 2026-04-16 09:10:38`），已包含条目 73 代码与交接更新。
+    - 远端：`git push origin main` 经脚本重试 3 次及手工重试仍失败，典型错误为 `Recv failure: Connection was reset` / `schannel: server closed abruptly`。
+    - 处置：网络恢复后执行 `scripts/git_sync_once.ps1` 或 `git push origin main` 补推即可；失败不阻断本地开发与审计日志落盘。
