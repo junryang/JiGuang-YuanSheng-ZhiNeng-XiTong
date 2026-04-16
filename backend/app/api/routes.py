@@ -1649,21 +1649,25 @@ def git_sync_summary(
         sync_silence_severity_level_rank = 3
         sync_silence_severity_level_label = "缺失"
         sync_silence_severity_level_color = "#9CA3AF"
+        sync_silence_severity_level_code = "MISSING"
     elif sync_silence_severity_score >= 100.0:
         sync_silence_severity_level = "high"
         sync_silence_severity_level_rank = 2
         sync_silence_severity_level_label = "高"
         sync_silence_severity_level_color = "#EF4444"
+        sync_silence_severity_level_code = "HIGH"
     elif sync_silence_severity_score > 0.0:
         sync_silence_severity_level = "medium"
         sync_silence_severity_level_rank = 1
         sync_silence_severity_level_label = "中"
         sync_silence_severity_level_color = "#FBBF24"
+        sync_silence_severity_level_code = "MEDIUM"
     else:
         sync_silence_severity_level = "low"
         sync_silence_severity_level_rank = 0
         sync_silence_severity_level_label = "低"
         sync_silence_severity_level_color = "#22C55E"
+        sync_silence_severity_level_code = "LOW"
 
     return {
         "days": ndays,
@@ -1702,6 +1706,7 @@ def git_sync_summary(
         "sync_silence_severity_level_rank": sync_silence_severity_level_rank,
         "sync_silence_severity_level_label": sync_silence_severity_level_label,
         "sync_silence_severity_level_color": sync_silence_severity_level_color,
+        "sync_silence_severity_level_code": sync_silence_severity_level_code,
         # UI state quick-color mapping: reuse severity color to keep semantics consistent.
         "sync_silence_state_color": sync_silence_severity_level_color,
         "consecutive_failure_streak": consecutive_failure_streak,
@@ -2071,21 +2076,25 @@ def analytics_reports(
         git_sync_event_silence_severity_level_rank = 3
         git_sync_event_silence_severity_level_label = "缺失"
         git_sync_event_silence_severity_level_color = "#9CA3AF"
+        git_sync_event_silence_severity_level_code = "MISSING"
     elif git_sync_event_silence_severity_score >= 100.0:
         git_sync_event_silence_severity_level = "high"
         git_sync_event_silence_severity_level_rank = 2
         git_sync_event_silence_severity_level_label = "高"
         git_sync_event_silence_severity_level_color = "#EF4444"
+        git_sync_event_silence_severity_level_code = "HIGH"
     elif git_sync_event_silence_severity_score > 0.0:
         git_sync_event_silence_severity_level = "medium"
         git_sync_event_silence_severity_level_rank = 1
         git_sync_event_silence_severity_level_label = "中"
         git_sync_event_silence_severity_level_color = "#FBBF24"
+        git_sync_event_silence_severity_level_code = "MEDIUM"
     else:
         git_sync_event_silence_severity_level = "low"
         git_sync_event_silence_severity_level_rank = 0
         git_sync_event_silence_severity_level_label = "低"
         git_sync_event_silence_severity_level_color = "#22C55E"
+        git_sync_event_silence_severity_level_code = "LOW"
     return {
         "report_type": norm_type,
         "days": days,
@@ -2188,6 +2197,7 @@ def analytics_reports(
         "git_sync_event_silence_severity_level_rank": git_sync_event_silence_severity_level_rank,
         "git_sync_event_silence_severity_level_label": git_sync_event_silence_severity_level_label,
         "git_sync_event_silence_severity_level_color": git_sync_event_silence_severity_level_color,
+        "git_sync_event_silence_severity_level_code": git_sync_event_silence_severity_level_code,
         # UI state quick-color mapping: reuse severity color to keep semantics consistent.
         "git_sync_event_silence_state_color": git_sync_event_silence_severity_level_color,
         "last_git_sync_success_at": last_git_sync_success_at.isoformat() if last_git_sync_success_at else None,

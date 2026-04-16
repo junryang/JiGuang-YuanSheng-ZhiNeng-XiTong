@@ -299,6 +299,7 @@ def test_git_sync_summary_endpoint():
     assert "sync_silence_severity_level" in body
     assert "sync_silence_severity_level_rank" in body
     assert "sync_silence_severity_level_label" in body
+    assert "sync_silence_severity_level_code" in body
     assert "consecutive_failure_streak" in body
     assert "consecutive_non_success_streak" in body
     assert "sync_health_level" in body
@@ -391,6 +392,8 @@ def test_git_sync_summary_endpoint():
     assert isinstance(body["sync_silence_severity_level_rank"], int)
     assert body["sync_silence_severity_level_rank"] in {0, 1, 2, 3}
     assert body["sync_silence_severity_level_label"] in {"低", "中", "高", "缺失"}
+    assert "sync_silence_severity_level_code" in body
+    assert body["sync_silence_severity_level_code"] in {"MISSING", "LOW", "MEDIUM", "HIGH"}
     assert "sync_silence_severity_level_color" in body
     assert body["sync_silence_severity_level_color"] in {"#9CA3AF", "#EF4444", "#FBBF24", "#22C55E"}
     assert "sync_silence_state_color" in body
@@ -712,6 +715,7 @@ def test_analytics_reports_project_execution_and_ops_risk():
     assert "git_sync_event_silence_severity_level" in opsb
     assert "git_sync_event_silence_severity_level_rank" in opsb
     assert "git_sync_event_silence_severity_level_label" in opsb
+    assert "git_sync_event_silence_severity_level_code" in opsb
     assert "last_git_sync_success_at" in opsb
     assert "minutes_since_last_git_sync_success" in opsb
     assert "last_git_sync_failure_at" in opsb
@@ -792,6 +796,8 @@ def test_analytics_reports_project_execution_and_ops_risk():
     assert isinstance(opsb["git_sync_event_silence_severity_level_rank"], int)
     assert opsb["git_sync_event_silence_severity_level_rank"] in {0, 1, 2, 3}
     assert opsb["git_sync_event_silence_severity_level_label"] in {"低", "中", "高", "缺失"}
+    assert "git_sync_event_silence_severity_level_code" in opsb
+    assert opsb["git_sync_event_silence_severity_level_code"] in {"MISSING", "LOW", "MEDIUM", "HIGH"}
     assert "git_sync_event_silence_severity_level_color" in opsb
     assert opsb["git_sync_event_silence_severity_level_color"] in {"#9CA3AF", "#EF4444", "#FBBF24", "#22C55E"}
     assert "git_sync_event_silence_state_color" in opsb
