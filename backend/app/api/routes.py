@@ -1376,8 +1376,10 @@ def git_sync_summary(
     push_attempt_max = 0
     audit_delivery_success_count = 0
     audit_delivery_failed_count = 0
+    audit_delivery_invalid_count = 0
     last_audit_delivery_success_at: datetime | None = None
     last_audit_delivery_failed_at: datetime | None = None
+    last_audit_delivery_invalid_at: datetime | None = None
     last_success_at: datetime | None = None
     last_failure_at: datetime | None = None
     last_skipped_at: datetime | None = None
@@ -1420,6 +1422,10 @@ def git_sync_summary(
             audit_delivery_failed_count += 1
             if last_audit_delivery_failed_at is None or ts > last_audit_delivery_failed_at:
                 last_audit_delivery_failed_at = ts
+        elif audit_delivery:
+            audit_delivery_invalid_count += 1
+            if last_audit_delivery_invalid_at is None or ts > last_audit_delivery_invalid_at:
+                last_audit_delivery_invalid_at = ts
         if last_event_at is None or ts > last_event_at:
             last_event_at = ts
         if status == "success" and (last_success_at is None or ts > last_success_at):
@@ -1532,6 +1538,9 @@ def git_sync_summary(
     audit_delivery_untagged_rate = (
         round((audit_delivery_untagged_count / totals["total"]) * 100, 1) if totals["total"] > 0 else 0.0
     )
+    audit_delivery_invalid_rate = (
+        round((audit_delivery_invalid_count / totals["total"]) * 100, 1) if totals["total"] > 0 else 0.0
+    )
     top_branches = sorted(
         [{"branch": b, **stats} for b, stats in branch_totals.items()],
         key=lambda x: (-x["total"], x["branch"]),
@@ -1634,6 +1643,12 @@ def git_sync_summary(
         "audit_delivery_coverage_rate": audit_delivery_coverage_rate,
         "audit_delivery_untagged_count": audit_delivery_untagged_count,
         "audit_delivery_untagged_rate": audit_delivery_untagged_rate,
+        "audit_delivery_invalid_count": audit_delivery_invalid_count,
+        "audit_delivery_invalid_rate": audit_delivery_invalid_rate,
+        "last_audit_delivery_invalid_at": (
+            last_audit_delivery_invalid_at.isoformat() if last_audit_delivery_invalid_at else None
+        ),
+        "minutes_since_last_audit_delivery_invalid": _minutes_since(last_audit_delivery_invalid_at, now_hour),
         "last_audit_delivery_success_at": (
             last_audit_delivery_success_at.isoformat() if last_audit_delivery_success_at else None
         ),
@@ -1737,6 +1752,22 @@ def analytics_reports(
             git_audit_delivery_failed += 1
         elif audit_delivery == "success":
             git_audit_delivery_success += 1
+    git_audit_delivery_invalid = 0
+    last_git_sync_audit_delivery_invalid_at = None
+    for e in git_events:
+        context = e.get("context") or {}
+        st = str(context.get("status", "")).strip().lower()
+        if st not in {"success", "failure", "skipped"}:
+            continue
+        audit_delivery = str(context.get("audit_delivery", "")).strip().lower()
+        if audit_delivery and audit_delivery not in {"success", "failed"}:
+            git_audit_delivery_invalid += 1
+            ts = _parse_utc_iso(e.get("timestamp"))
+            if ts and (
+                last_git_sync_audit_delivery_invalid_at is None
+                or ts > last_git_sync_audit_delivery_invalid_at
+            ):
+                last_git_sync_audit_delivery_invalid_at = ts
     failure_reason_counter: dict[str, int] = {}
     for e in git_events:
         if str((e.get("context") or {}).get("status", "")).lower() != "failure":
@@ -1811,6 +1842,9 @@ def analytics_reports(
     git_sync_audit_delivery_untagged_count = max(0, git_total - git_sync_audit_delivery_tagged_count)
     git_sync_audit_delivery_untagged_rate = (
         round((git_sync_audit_delivery_untagged_count / git_total) * 100, 1) if git_total > 0 else 0.0
+    )
+    git_sync_audit_delivery_invalid_rate = (
+        round((git_audit_delivery_invalid / git_total) * 100, 1) if git_total > 0 else 0.0
     )
     git_net_success_rate = round(((git_success - git_failure) / git_total) * 100, 1) if git_total > 0 else 0.0
     git_event_density_per_day = round(git_total / max(1, int(days)), 2)
@@ -1887,6 +1921,16 @@ def analytics_reports(
         "git_sync_audit_delivery_coverage_rate": git_sync_audit_delivery_coverage_rate,
         "git_sync_audit_delivery_untagged_count": git_sync_audit_delivery_untagged_count,
         "git_sync_audit_delivery_untagged_rate": git_sync_audit_delivery_untagged_rate,
+        "git_sync_audit_delivery_invalid_count": git_audit_delivery_invalid,
+        "git_sync_audit_delivery_invalid_rate": git_sync_audit_delivery_invalid_rate,
+        "last_git_sync_audit_delivery_invalid_at": (
+            last_git_sync_audit_delivery_invalid_at.isoformat()
+            if last_git_sync_audit_delivery_invalid_at
+            else None
+        ),
+        "minutes_since_last_git_sync_audit_delivery_invalid": _minutes_since(
+            last_git_sync_audit_delivery_invalid_at, now
+        ),
         "git_sync_net_success_rate": git_net_success_rate,
         "git_sync_failure_pressure_index": git_sync_failure_pressure_index,
         "git_sync_event_density_per_day": git_event_density_per_day,

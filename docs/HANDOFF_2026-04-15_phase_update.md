@@ -661,3 +661,16 @@
     - 本地提交：`2f55dfd`（`chore(sync): auto sync 2026-04-16 09:10:38`），已包含条目 73 代码与交接更新。
     - 远端：`git push origin main` 经脚本重试 3 次及手工重试仍失败，典型错误为 `Recv failure: Connection was reset` / `schannel: server closed abruptly`。
     - 处置：网络恢复后执行 `scripts/git_sync_once.ps1` 或 `git push origin main` 补推即可；失败不阻断本地开发与审计日志落盘。
+
+75. Git 摘要与运营风险报告补充审计投递非法取值统计（完成后增强）
+    - 文件：`backend/app/api/routes.py`、`backend/tests/test_api_smoke.py`
+    - 变更：
+      - `GET /api/v1/ops/git-sync/summary` 新增：
+        - `audit_delivery_invalid_count`：`context.audit_delivery` 非空且不为 `success|failed` 的条数（与「未标记」区分，用于发现脚本枚举/拼写错误）
+        - `audit_delivery_invalid_rate`（相对 `totals.total`，保留 1 位小数）
+        - `last_audit_delivery_invalid_at`、`minutes_since_last_audit_delivery_invalid`
+      - `GET /api/v1/analytics/reports?report_type=ops_risk` 新增：
+        - `git_sync_audit_delivery_invalid_count`、`git_sync_audit_delivery_invalid_rate`
+        - `last_git_sync_audit_delivery_invalid_at`、`minutes_since_last_git_sync_audit_delivery_invalid`
+      - 运营报告侧非法计数仅统计 `context.status` 为 `success|failure|skipped` 的事件，与摘要主循环口径一致。
+      - 最小回归：`test_git_sync_summary_endpoint`、`test_analytics_reports_project_execution_and_ops_risk` 注入非法 `audit_delivery` 样例并断言新字段。
