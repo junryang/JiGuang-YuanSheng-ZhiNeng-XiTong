@@ -1648,18 +1648,22 @@ def git_sync_summary(
         sync_silence_severity_level = "missing"
         sync_silence_severity_level_rank = 3
         sync_silence_severity_level_label = "缺失"
+        sync_silence_severity_level_color = "#9CA3AF"
     elif sync_silence_severity_score >= 100.0:
         sync_silence_severity_level = "high"
         sync_silence_severity_level_rank = 2
         sync_silence_severity_level_label = "高"
+        sync_silence_severity_level_color = "#EF4444"
     elif sync_silence_severity_score > 0.0:
         sync_silence_severity_level = "medium"
         sync_silence_severity_level_rank = 1
         sync_silence_severity_level_label = "中"
+        sync_silence_severity_level_color = "#FBBF24"
     else:
         sync_silence_severity_level = "low"
         sync_silence_severity_level_rank = 0
         sync_silence_severity_level_label = "低"
+        sync_silence_severity_level_color = "#22C55E"
 
     return {
         "days": ndays,
@@ -1697,6 +1701,7 @@ def git_sync_summary(
         "sync_silence_severity_level": sync_silence_severity_level,
         "sync_silence_severity_level_rank": sync_silence_severity_level_rank,
         "sync_silence_severity_level_label": sync_silence_severity_level_label,
+        "sync_silence_severity_level_color": sync_silence_severity_level_color,
         "consecutive_failure_streak": consecutive_failure_streak,
         "consecutive_non_success_streak": consecutive_non_success_streak,
         "sync_health_level": sync_health_level,
@@ -2063,18 +2068,22 @@ def analytics_reports(
         git_sync_event_silence_severity_level = "missing"
         git_sync_event_silence_severity_level_rank = 3
         git_sync_event_silence_severity_level_label = "缺失"
+        git_sync_event_silence_severity_level_color = "#9CA3AF"
     elif git_sync_event_silence_severity_score >= 100.0:
         git_sync_event_silence_severity_level = "high"
         git_sync_event_silence_severity_level_rank = 2
         git_sync_event_silence_severity_level_label = "高"
+        git_sync_event_silence_severity_level_color = "#EF4444"
     elif git_sync_event_silence_severity_score > 0.0:
         git_sync_event_silence_severity_level = "medium"
         git_sync_event_silence_severity_level_rank = 1
         git_sync_event_silence_severity_level_label = "中"
+        git_sync_event_silence_severity_level_color = "#FBBF24"
     else:
         git_sync_event_silence_severity_level = "low"
         git_sync_event_silence_severity_level_rank = 0
         git_sync_event_silence_severity_level_label = "低"
+        git_sync_event_silence_severity_level_color = "#22C55E"
     return {
         "report_type": norm_type,
         "days": days,
@@ -2176,6 +2185,7 @@ def analytics_reports(
         "git_sync_event_silence_severity_level": git_sync_event_silence_severity_level,
         "git_sync_event_silence_severity_level_rank": git_sync_event_silence_severity_level_rank,
         "git_sync_event_silence_severity_level_label": git_sync_event_silence_severity_level_label,
+        "git_sync_event_silence_severity_level_color": git_sync_event_silence_severity_level_color,
         "last_git_sync_success_at": last_git_sync_success_at.isoformat() if last_git_sync_success_at else None,
         "minutes_since_last_git_sync_success": _minutes_since(last_git_sync_success_at, now),
         "last_git_sync_failure_at": last_git_sync_failure_at.isoformat() if last_git_sync_failure_at else None,
