@@ -607,3 +607,16 @@
       - 判定口径：基于净健康分（`success_rate - failure_rate`）分级，`<= -20` 判 `high_risk`，`<0` 判 `warning`，其余为 `healthy`。
       - 目标：让净值指标可直接用于看板分层和告警触发，减少人工解读成本。
       - 补充最小回归断言，校验字段存在、枚举合法和类型正确。
+
+70. Git 摘要与运营风险报告补充审计投递日均密度（完成后增强）
+    - 文件：`backend/app/api/routes.py`、`backend/tests/test_api_smoke.py`
+    - 变更：
+      - `GET /api/v1/ops/git-sync/summary` 新增：
+        - `audit_delivery_success_density_per_day`
+        - `audit_delivery_failed_density_per_day`
+      - `GET /api/v1/analytics/reports?report_type=ops_risk` 新增：
+        - `git_sync_audit_delivery_success_density_per_day`
+        - `git_sync_audit_delivery_failed_density_per_day`
+      - 口径：成功/失败审计投递计数分别除以摘要窗口 `days` 或报告参数 `days`（最小按 1），保留 2 位小数，与既有 Git 事件密度字段口径一致。
+      - 目标：横向对比不同时间窗口内审计旁路活跃度，辅助判断“偶发失败”与“持续高压”。
+      - 补充最小回归断言，校验字段存在且类型为 `float`，保持兼容增强。
