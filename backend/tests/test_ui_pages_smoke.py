@@ -26,6 +26,7 @@ def test_ui_static_dashboard():
     assert "auditPolicyFilter".encode("utf-8") in r.content
     assert "auditEnvFilter".encode("utf-8") in r.content
     assert "auditReasonCodeFilter".encode("utf-8") in r.content
+    assert "stageTimeoutHitFilter".encode("utf-8") in r.content
     assert "btnAuditApply".encode("utf-8") in r.content
     assert "event_type_prefix".encode("utf-8") in r.content
     assert "policy_id".encode("utf-8") in r.content
@@ -33,6 +34,7 @@ def test_ui_static_dashboard():
     assert "/api/v1/audit/events".encode("utf-8") in r.content
     assert "/api/v1/audit/summary".encode("utf-8") in r.content
     assert "reason_code_prefix".encode("utf-8") in r.content
+    assert "stage_timeout_hit_only".encode("utf-8") in r.content
     assert "reason_code".encode("utf-8") in r.content
     assert "allowed_rate".encode("utf-8") in r.content
     assert "llm/status".encode("utf-8") in r.content
@@ -230,6 +232,35 @@ def test_ui_project_detail_page():
     assert "sec-stages".encode("utf-8") in r.content
     assert "/projects/".encode("utf-8") in r.content
     assert "/stages".encode("utf-8") in r.content
+    assert "stageHealthPill".encode("utf-8") in r.content
+    assert "stageHealthThresholdPill".encode("utf-8") in r.content
+    assert "btnStageHealthCheck".encode("utf-8") in r.content
+    assert "stageTimeoutHitOnlyFilter".encode("utf-8") in r.content
+    assert "stageTimeoutEnvFilter".encode("utf-8") in r.content
+    assert "stageTimeoutPolicyFilter".encode("utf-8") in r.content
+    assert "stageTimeoutReasonFilter".encode("utf-8") in r.content
+    assert "stageTimeoutGroupByFilter".encode("utf-8") in r.content
+    assert "stageTimeoutGroupSortFilter".encode("utf-8") in r.content
+    assert "btnStageAuditQuery".encode("utf-8") in r.content
+    assert "/stages/health".encode("utf-8") in r.content
+    assert "/stages/health/check".encode("utf-8") in r.content
+    assert "/audit/summary".encode("utf-8") in r.content
+    assert "project_stage_timeout_alert".encode("utf-8") in r.content
+    assert "stage_timeout_hit_only".encode("utf-8") in r.content
+    assert "stage_timeout_env".encode("utf-8") in r.content
+    assert "stage_timeout_policy_id".encode("utf-8") in r.content
+    assert "stage_timeout_reason_code".encode("utf-8") in r.content
+    assert "stage_timeout_group_by".encode("utf-8") in r.content
+    assert "stage_timeout_alert_grouped".encode("utf-8") in r.content
+    assert "stage_timeout_alert_env_breakdown".encode("utf-8") in r.content
+    assert "按环境分组".encode("utf-8") in r.content
+    assert "hit_rate_desc".encode("utf-8") in r.content
+    assert "total_desc".encode("utf-8") in r.content
+    assert "stageTimeoutGroupedTableWrap".encode("utf-8") in r.content
+    assert "stageTimeoutRawDetails".encode("utf-8") in r.content
+    assert "stageTimeoutRawJson".encode("utf-8") in r.content
+    assert "thresholds".encode("utf-8") in r.content
+    assert "stage_overdue_threshold_minutes".encode("utf-8") in r.content
     assert "stageDeliverablesJson".encode("utf-8") in r.content
     assert "stageDefBody".encode("utf-8") in r.content
     assert "stageApprovalPill".encode("utf-8") in r.content

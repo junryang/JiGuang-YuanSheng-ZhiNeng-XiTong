@@ -1091,6 +1091,194 @@ def test_audit_summary_has_trend_and_top_reasons():
     assert "trend" in j2
 
 
+def test_audit_summary_includes_stage_timeout_alert_hit_metrics():
+    p = client.post(
+        "/api/v1/projects",
+        json={
+            "name": "audit-stage-timeout-summary",
+            "domain": "D03",
+            "project_type": "new_feature",
+            "environment": "dev",
+            "law": ["LAW-05"],
+        },
+    )
+    assert p.status_code == 200
+    pid = p.json()["id"]
+
+    # force=true in dev: create at least one stage timeout alert event
+    c = client.post(f"/api/v1/projects/{pid}/stages/health/check?force=true&cooldown_minutes=0")
+    assert c.status_code == 200
+
+    r = client.get(
+        "/api/v1/audit/summary",
+        params={"event_type_prefix": "project_stage_timeout_alert", "days": 7, "top_limit": 5},
+    )
+    assert r.status_code == 200
+    j = r.json()
+    assert "stage_timeout_alert_total" in j
+    assert "stage_timeout_alert_hit_count" in j
+    assert "stage_timeout_alert_miss_count" in j
+    assert "stage_timeout_alert_hit_rate" in j
+    assert "stage_timeout_alert_env_breakdown" in j
+    assert isinstance(j["stage_timeout_alert_total"], int)
+    assert isinstance(j["stage_timeout_alert_hit_count"], int)
+    assert isinstance(j["stage_timeout_alert_miss_count"], int)
+    assert isinstance(j["stage_timeout_alert_hit_rate"], float)
+    assert isinstance(j["stage_timeout_alert_env_breakdown"], list)
+    assert j["stage_timeout_alert_total"] >= 1
+
+
+def test_audit_summary_supports_stage_timeout_hit_only_filter():
+    from datetime import datetime, timedelta, timezone
+    from app.core.deps import get_json_store
+
+    p = client.post(
+        "/api/v1/projects",
+        json={
+            "name": "audit-stage-timeout-hit-only",
+            "domain": "D03",
+            "project_type": "new_feature",
+            "environment": "dev",
+            "law": ["LAW-05"],
+        },
+    )
+    assert p.status_code == 200
+    pid = p.json()["id"]
+
+    # one real hit event: make P01 clearly overdue and check with low threshold
+    stages = client.get(f"/api/v1/projects/{pid}/stages").json()
+    p01 = next(s for s in stages if s.get("id") == "P01")
+    p01["status"] = "in_progress"
+    p01["start_date"] = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
+    get_json_store().update_project(pid, {"stages": stages})
+    ok = client.post(
+        f"/api/v1/projects/{pid}/stages/health/check?stage_overdue_threshold_minutes=1&cooldown_minutes=0"
+    )
+    assert ok.status_code == 200
+    assert ok.json()["status"] == "emitted"
+
+    # one miss event: make timeout check no_alert by high threshold
+    miss = client.post(
+        f"/api/v1/projects/{pid}/stages/health/check?stage_overdue_threshold_minutes=50000&cooldown_minutes=0"
+    )
+    assert miss.status_code == 200
+    assert miss.json()["status"] == "no_alert"
+
+    hit_only = client.get(
+        "/api/v1/audit/summary",
+        params={
+            "event_type_prefix": "project_stage_timeout_alert",
+            "stage_timeout_hit_only": "true",
+            "days": 7,
+        },
+    )
+    assert hit_only.status_code == 200
+    hj = hit_only.json()
+    assert hj["stage_timeout_alert_total"] >= 1
+    assert hj["stage_timeout_alert_miss_count"] == 0
+
+    miss_only = client.get(
+        "/api/v1/audit/summary",
+        params={
+            "event_type_prefix": "project_stage_timeout_alert",
+            "stage_timeout_hit_only": "false",
+            "days": 7,
+        },
+    )
+    assert miss_only.status_code == 200
+    mj = miss_only.json()
+    assert mj["stage_timeout_alert_total"] >= 1
+    assert mj["stage_timeout_alert_hit_count"] == 0
+
+    # env filter should keep only specified environment rows
+    env_only = client.get(
+        "/api/v1/audit/summary",
+        params={
+            "event_type_prefix": "project_stage_timeout_alert",
+            "stage_timeout_env": "dev",
+            "days": 7,
+        },
+    )
+    assert env_only.status_code == 200
+    ej = env_only.json()
+    assert ej["stage_timeout_alert_total"] >= 1
+    assert all(row.get("environment") == "dev" for row in ej.get("stage_timeout_alert_env_breakdown", []))
+
+    # policy filter should keep only specified policy_id rows
+    pol_only = client.get(
+        "/api/v1/audit/summary",
+        params={
+            "event_type_prefix": "project_stage_timeout_alert",
+            "stage_timeout_policy_id": "project_stage_flow",
+            "days": 7,
+        },
+    )
+    assert pol_only.status_code == 200
+    pj = pol_only.json()
+    assert "stage_timeout_alert_total" in pj
+
+    pol_none = client.get(
+        "/api/v1/audit/summary",
+        params={
+            "event_type_prefix": "project_stage_timeout_alert",
+            "stage_timeout_policy_id": "no_such_policy_id",
+            "days": 7,
+        },
+    )
+    assert pol_none.status_code == 200
+    pn = pol_none.json()
+    assert pn["stage_timeout_alert_total"] == 0
+
+    reason_only = client.get(
+        "/api/v1/audit/summary",
+        params={
+            "event_type_prefix": "project_stage_timeout_alert",
+            "stage_timeout_reason_code": "STAGE_TIMEOUT_ALERT_EMITTED",
+            "days": 7,
+        },
+    )
+    assert reason_only.status_code == 200
+    rj = reason_only.json()
+    assert rj["stage_timeout_alert_total"] >= 1
+
+    reason_none = client.get(
+        "/api/v1/audit/summary",
+        params={
+            "event_type_prefix": "project_stage_timeout_alert",
+            "stage_timeout_reason_code": "NO_SUCH_REASON_CODE",
+            "days": 7,
+        },
+    )
+    assert reason_none.status_code == 200
+    rn = reason_none.json()
+    assert rn["stage_timeout_alert_total"] == 0
+
+    grp_env = client.get(
+        "/api/v1/audit/summary",
+        params={
+            "event_type_prefix": "project_stage_timeout_alert",
+            "stage_timeout_group_by": "environment",
+            "days": 7,
+        },
+    )
+    assert grp_env.status_code == 200
+    ge = grp_env.json()
+    assert ge["stage_timeout_group_by"] == "environment"
+    assert isinstance(ge["stage_timeout_alert_grouped"], list)
+
+    grp_reason = client.get(
+        "/api/v1/audit/summary",
+        params={
+            "event_type_prefix": "project_stage_timeout_alert",
+            "stage_timeout_group_by": "reason_code",
+            "days": 7,
+        },
+    )
+    assert grp_reason.status_code == 200
+    gr = grp_reason.json()
+    assert gr["stage_timeout_group_by"] == "reason_code"
+    assert isinstance(gr["stage_timeout_alert_grouped"], list)
+
 def test_collab_error_code_for_missing_delegation():
     miss = client.get("/api/v1/collaboration/delegations/dlg-no-such-id")
     assert miss.status_code == 404

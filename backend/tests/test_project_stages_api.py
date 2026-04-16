@@ -215,3 +215,177 @@ def test_project_stage_deliverable_upload_replaces_same_name_and_rejects_unknown
     assert bad.status_code == 400
     assert bad.json()["detail"]["error_code"] == "UNKNOWN_DELIVERABLE"
 
+
+def test_project_stages_timeline_endpoint_basic_shape():
+    p = client.post(
+        "/api/v1/projects",
+        json={
+            "name": "stages-timeline",
+            "domain": "D03",
+            "project_type": "new_feature",
+            "environment": "dev",
+            "law": ["LAW-05"],
+        },
+    )
+    assert p.status_code == 200
+    pid = p.json()["id"]
+
+    tl = client.get(f"/api/v1/projects/{pid}/stages/timeline")
+    assert tl.status_code == 200
+    body = tl.json()
+    assert body["project_id"] == pid
+    assert isinstance(body["items"], list)
+    assert body["total"] == 9
+    assert len(body["items"]) == 9
+    assert body["items"][0]["stage_id"] == "P01"
+    assert body["items"][0]["order"] == 1
+    assert body["items"][0]["start_date"] is None
+    assert body["items"][0]["end_date"] is None
+    assert body["items"][0]["duration_minutes"] is None
+
+
+def test_project_stages_health_endpoint_basic_shape():
+    p = client.post(
+        "/api/v1/projects",
+        json={
+            "name": "stages-health",
+            "domain": "D03",
+            "project_type": "new_feature",
+            "environment": "dev",
+            "law": ["LAW-05"],
+        },
+    )
+    assert p.status_code == 200
+    pid = p.json()["id"]
+
+    r = client.get(f"/api/v1/projects/{pid}/stages/health")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["project_id"] == pid
+    assert isinstance(body["current_stage"], dict)
+    assert body["current_stage"]["stage_id"] == "P01"
+    assert body["stage_timeout_minutes"] > 0
+    assert body["approval_timeout_minutes"] is None
+    assert body["stage_overdue"] in (True, False)
+    assert body["approval_overdue"] in (True, False)
+
+
+def test_project_stage_timeout_alert_check_endpoint_force_and_cooldown_dedupe():
+    p = client.post(
+        "/api/v1/projects",
+        json={
+            "name": "stages-timeout-alert",
+            "domain": "D03",
+            "project_type": "new_feature",
+            "environment": "dev",
+            "law": ["LAW-05"],
+        },
+    )
+    assert p.status_code == 200
+    pid = p.json()["id"]
+
+    r1 = client.post(f"/api/v1/projects/{pid}/stages/health/check?force=true&cooldown_minutes=30")
+    assert r1.status_code == 200
+    body1 = r1.json()
+    assert body1["status"] == "emitted"
+    assert body1["emitted"] is True
+    assert isinstance(body1.get("thresholds"), dict)
+    assert isinstance(body1.get("hits"), dict)
+    assert "stage_overdue_threshold_minutes" in body1["thresholds"]
+    assert "approval_overdue_threshold_minutes" in body1["thresholds"]
+
+    # second call within cooldown should be skipped (dedupe)
+    r2 = client.post(f"/api/v1/projects/{pid}/stages/health/check?force=true&cooldown_minutes=30")
+    assert r2.status_code == 200
+    body2 = r2.json()
+    assert body2["status"] == "skipped"
+    assert body2["emitted"] is False
+    assert body2["reason_code"] == "COOLDOWN_ACTIVE"
+    assert isinstance(body2.get("thresholds"), dict)
+    assert isinstance(body2.get("hits"), dict)
+
+    disc = client.get(f"/api/v1/projects/{pid}/discussion")
+    assert disc.status_code == 200
+    items = disc.json()["items"]
+    assert sum(1 for x in items if "[STAGE_TIMEOUT_ALERT]" in str(x.get("body", ""))) == 1
+
+    ev = client.get(
+        "/api/v1/audit/events",
+        params={"event_type_prefix": "project_stage_timeout_alert", "limit": 50},
+    )
+    assert ev.status_code == 200
+    events = ev.json()["events"]
+    assert any((e.get("context") or {}).get("project_id") == pid for e in events)
+
+
+def test_project_stage_timeout_alert_force_not_allowed_in_staging():
+    p = client.post(
+        "/api/v1/projects",
+        json={
+            "name": "stages-timeout-alert-staging",
+            "domain": "D03",
+            "project_type": "new_feature",
+            "environment": "dev",
+            "law": ["LAW-05"],
+        },
+    )
+    assert p.status_code == 200
+    pid = p.json()["id"]
+    u = client.put(f"/api/v1/projects/{pid}", json={"environment": "staging"})
+    assert u.status_code == 200
+
+    r = client.post(f"/api/v1/projects/{pid}/stages/health/check?force=true")
+    assert r.status_code == 400
+    assert r.json()["detail"]["error_code"] == "FORCE_NOT_ALLOWED"
+
+
+def test_project_stage_timeout_alert_respects_overdue_threshold_minutes():
+    p = client.post(
+        "/api/v1/projects",
+        json={
+            "name": "stages-timeout-threshold",
+            "domain": "D03",
+            "project_type": "new_feature",
+            "environment": "dev",
+            "law": ["LAW-05"],
+        },
+    )
+    assert p.status_code == 200
+    pid = p.json()["id"]
+
+    # Make P01 in progress and clearly overdue by setting start_date far in the past.
+    from datetime import datetime, timedelta, timezone
+
+    stages = client.get(f"/api/v1/projects/{pid}/stages").json()
+    p01 = next(s for s in stages if s.get("id") == "P01")
+    p01["status"] = "in_progress"
+    p01["start_date"] = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
+    # Update stages directly in store (UpdateProjectRequest does not accept stages patch).
+    from app.core.deps import get_json_store
+
+    store = get_json_store()
+    store.update_project(pid, {"stages": stages})
+
+    h = client.get(f"/api/v1/projects/{pid}/stages/health").json()
+    assert h["current_stage"]["stage_id"] == "P01"
+    assert h["stage_overdue"] is True
+    assert h["stage_overdue_minutes"] is not None
+
+    # Threshold higher than overdue -> treated as not overdue -> no alert
+    r1 = client.post(
+        f"/api/v1/projects/{pid}/stages/health/check?stage_overdue_threshold_minutes=50000&cooldown_minutes=0"
+    )
+    assert r1.status_code == 200
+    assert r1.json()["status"] == "no_alert"
+    assert r1.json()["hits"]["stage_overdue_hit"] is False
+    assert r1.json()["thresholds"]["stage_overdue_threshold_minutes"] == 50000
+
+    # Low threshold -> emit
+    r2 = client.post(
+        f"/api/v1/projects/{pid}/stages/health/check?stage_overdue_threshold_minutes=1&cooldown_minutes=30"
+    )
+    assert r2.status_code == 200
+    assert r2.json()["status"] == "emitted"
+    assert r2.json()["hits"]["stage_overdue_hit"] is True
+    assert r2.json()["thresholds"]["stage_overdue_threshold_minutes"] == 1
+

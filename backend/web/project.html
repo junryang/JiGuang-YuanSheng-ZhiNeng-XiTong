@@ -125,6 +125,32 @@
       <p class="meta">对接 <code>/projects/{id}/stages</code>，展示 9 阶段生命周期，并支持对当前阶段执行 start / complete / approve / reject。</p>
       <div class="row" style="margin-bottom:0.5rem">
         <span class="pill" id="stageCurrentPill">当前阶段：—</span>
+        <span class="pill" id="stageHealthPill">健康：—</span>
+        <span class="pill" id="stageHealthThresholdPill">阈值：—</span>
+        <button type="button" class="secondary" id="btnStageHealthCheck">检查超时并提醒</button>
+        <select id="stageTimeoutHitOnlyFilter" class="inline" style="max-width:140px">
+          <option value="">全部</option>
+          <option value="true">仅命中</option>
+          <option value="false">仅未命中</option>
+        </select>
+        <select id="stageTimeoutEnvFilter" class="inline" style="max-width:140px">
+          <option value="">全部环境</option>
+          <option value="dev">dev</option>
+          <option value="staging">staging</option>
+          <option value="prod">prod</option>
+        </select>
+        <input id="stageTimeoutPolicyFilter" class="inline" style="max-width:180px" value="project_stage_flow" />
+        <input id="stageTimeoutReasonFilter" class="inline" style="max-width:220px" placeholder="reason_code（可选）" />
+        <select id="stageTimeoutGroupByFilter" class="inline" style="max-width:170px">
+          <option value="">不分组</option>
+          <option value="environment">按环境分组</option>
+          <option value="reason_code">按原因码分组</option>
+        </select>
+        <select id="stageTimeoutGroupSortFilter" class="inline" style="max-width:180px">
+          <option value="hit_rate_desc">按命中率降序</option>
+          <option value="total_desc">按总量降序</option>
+        </select>
+        <button type="button" class="secondary" id="btnStageAuditQuery">查询提醒统计</button>
         <button type="button" class="secondary" id="btnStageRefresh">刷新阶段</button>
       </div>
       <div style="overflow:auto">
@@ -176,6 +202,11 @@
       <label class="meta" style="display:block;margin-top:0.4rem">阶段备注 / 审批意见</label>
       <textarea id="stageComments" class="mono" style="min-height:72px;font-size:0.78rem;margin-top:0.25rem"></textarea>
       <pre id="stageOut" class="mono" style="margin-top:0.5rem;max-height:240px;overflow:auto">—</pre>
+      <div id="stageTimeoutGroupedTableWrap" style="overflow:auto;margin-top:0.5rem"></div>
+      <details id="stageTimeoutRawDetails" style="margin-top:0.4rem">
+        <summary>查看提醒统计原始 JSON</summary>
+        <pre id="stageTimeoutRawJson" class="mono" style="max-height:220px;overflow:auto">—</pre>
+      </details>
     </section>
     <section id="sec-statusflow">
       <h2>执行状态</h2>
@@ -503,6 +534,8 @@
         btnApprove.disabled = true;
         btnReject.disabled = true;
         document.getElementById("stageApprovalPill").textContent = "审批：—";
+        document.getElementById("stageHealthPill").textContent = "健康：—";
+        document.getElementById("stageHealthThresholdPill").textContent = "阈值：—";
         document.getElementById("stageEnvBudgetPill").textContent = "环境/预算：—";
         document.getElementById("stageConditionPill").textContent = "条件：—";
         document.getElementById("stageApproverReqPill").textContent = "身份要求：—";
@@ -546,6 +579,7 @@
       const defap = ap.default_approver_role ? " · 默认: " + String(ap.default_approver_role) : "";
       document.getElementById("stageApprovalPill").textContent =
         "审批：" + req + " · 审批人 " + ar + (al ? "/" + al : "") + " · 超时 " + th + cond + defap;
+      // health pill is rendered separately (may be loaded in parallel)
       const env = (window.__projectEnv || "dev") + "";
       const budget = window.__projectBudget != null ? String(window.__projectBudget) : "—";
       document.getElementById("stageEnvBudgetPill").textContent = "环境/预算：" + env + " / " + budget;
@@ -587,6 +621,41 @@
         document.getElementById("stageDeliverableOneJson").value = "{}";
       }
       document.getElementById("stageComments").value = stage.comments != null ? String(stage.comments) : "";
+    }
+
+    function renderStageHealth(health) {
+      const el = document.getElementById("stageHealthPill");
+      const th = document.getElementById("stageHealthThresholdPill");
+      if (!el) return;
+      if (!health || !health.current_stage) {
+        el.textContent = "健康：—";
+        if (th) th.textContent = "阈值：—";
+        return;
+      }
+      const st = health.current_stage || {};
+      const so = health.stage_overdue === true;
+      const ao = health.approval_overdue === true;
+      const sm = health.stage_overdue_minutes != null ? String(health.stage_overdue_minutes) : "—";
+      const am = health.approval_overdue_minutes != null ? String(health.approval_overdue_minutes) : "—";
+      const sTxt = so ? ("阶段超时 +" + sm + "m") : "阶段未超时";
+      const aTxt = (health.approval_timeout_minutes != null)
+        ? (ao ? ("审批超时 +" + am + "m") : "审批未超时")
+        : "无审批计时";
+      el.textContent = "健康：" + sTxt + " · " + aTxt;
+      if (th) {
+        const meta = window.__lastStageHealthCheckMeta || {};
+        const ts = meta.stage_threshold_minutes;
+        const ta = meta.approval_threshold_minutes;
+        const hs = meta.stage_hit;
+        const ha = meta.approval_hit;
+        if (ts != null || ta != null) {
+          th.textContent =
+            "阈值：阶段≥" + String(ts != null ? ts : "—") + "m(" + String(hs === true ? "命中" : "未命中") + ")" +
+            " · 审批≥" + String(ta != null ? ta : "—") + "m(" + String(ha === true ? "命中" : "未命中") + ")";
+        } else {
+          th.textContent = "阈值：—";
+        }
+      }
     }
 
     async function loadStages() {
@@ -753,13 +822,14 @@
       window.__projectEnv = proj.environment || "dev";
       window.__projectBudget = proj.budget != null ? proj.budget : null;
 
-      const [pr, gg, tk, dc, tm, stages] = await Promise.all([
+      const [pr, gg, tk, dc, tm, stages, stHealth] = await Promise.all([
         jyisApiFetch(API + "/projects/" + encodeURIComponent(PROJECT_ID) + "/progress").then(r => r.json()),
         jyisApiFetch(API + "/projects/" + encodeURIComponent(PROJECT_ID) + "/gantt").then(r => r.json()),
         jyisApiFetch(API + "/tasks?project_id=" + encodeURIComponent(PROJECT_ID) + "&limit=500").then(r => r.json()),
         jyisApiFetch(API + "/projects/" + encodeURIComponent(PROJECT_ID) + "/discussion").then(r => r.json()),
         jyisApiFetch(API + "/projects/" + encodeURIComponent(PROJECT_ID) + "/team").then(r => r.json()),
         jyisApiFetch(API + "/projects/" + encodeURIComponent(PROJECT_ID) + "/stages").then(r => r.json()),
+        jyisApiFetch(API + "/projects/" + encodeURIComponent(PROJECT_ID) + "/stages/health").then(r => r.json()),
       ]);
 
       document.getElementById("pOverall").textContent = "总进度 " + (pr.overall_progress ?? "—") + "%";
@@ -819,6 +889,7 @@
       window.__currentStageId = picked ? String(picked.id || "") : "";
       renderStageTable(window.__projectStages);
       renderCurrentStage(picked);
+      renderStageHealth(stHealth);
 
       const treeEl = document.getElementById("taskTree");
       treeEl.textContent = "";
@@ -829,6 +900,182 @@
       treeEl.appendChild(ul);
 
       window.__reloadProject = loadAll;
+    }
+
+    async function stageHealthCheck() {
+      if (!PROJECT_ID) return;
+      const out = document.getElementById("stageOut");
+      out.textContent = "请求中…";
+      const r = await jyisApiFetch(
+        API + "/projects/" + encodeURIComponent(PROJECT_ID) + "/stages/health/check",
+        { method: "POST" }
+      );
+      const txt = await r.text();
+      out.textContent = txt;
+      if (!r.ok) {
+        alert("检查失败 " + r.status + " " + txt.slice(0, 240));
+        return;
+      }
+      try {
+        const data = JSON.parse(txt);
+        const t = data && data.thresholds ? data.thresholds : {};
+        const h = data && data.hits ? data.hits : {};
+        window.__lastStageHealthCheckMeta = {
+          stage_threshold_minutes: t.stage_overdue_threshold_minutes,
+          approval_threshold_minutes: t.approval_overdue_threshold_minutes,
+          stage_hit: h.stage_overdue_hit === true,
+          approval_hit: h.approval_overdue_hit === true,
+        };
+      } catch (_) {
+        window.__lastStageHealthCheckMeta = null;
+      }
+      await loadAll();
+    }
+
+    async function stageTimeoutAuditQuery() {
+      if (!PROJECT_ID) return;
+      const out = document.getElementById("stageOut");
+      const groupedWrap = document.getElementById("stageTimeoutGroupedTableWrap");
+      const rawJsonBox = document.getElementById("stageTimeoutRawJson");
+      const hitOnlySel = document.getElementById("stageTimeoutHitOnlyFilter");
+      const hitOnly = hitOnlySel && hitOnlySel.value ? String(hitOnlySel.value).trim() : "";
+      const envSel = document.getElementById("stageTimeoutEnvFilter");
+      const envOnly = envSel && envSel.value ? String(envSel.value).trim() : "";
+      const policySel = document.getElementById("stageTimeoutPolicyFilter");
+      const policyOnly = policySel && policySel.value ? String(policySel.value).trim() : "";
+      const reasonSel = document.getElementById("stageTimeoutReasonFilter");
+      const reasonOnly = reasonSel && reasonSel.value ? String(reasonSel.value).trim() : "";
+      const groupSel = document.getElementById("stageTimeoutGroupByFilter");
+      const groupBy = groupSel && groupSel.value ? String(groupSel.value).trim() : "";
+      const sortSel = document.getElementById("stageTimeoutGroupSortFilter");
+      const sortBy = sortSel && sortSel.value ? String(sortSel.value).trim() : "hit_rate_desc";
+      const qs = new URLSearchParams({
+        event_type_prefix: "project_stage_timeout_alert",
+        days: "7",
+        top_limit: "5",
+      });
+      if (hitOnly === "true" || hitOnly === "false") {
+        qs.set("stage_timeout_hit_only", hitOnly);
+      }
+      if (envOnly === "dev" || envOnly === "staging" || envOnly === "prod") {
+        qs.set("stage_timeout_env", envOnly);
+      }
+      if (policyOnly) {
+        qs.set("stage_timeout_policy_id", policyOnly);
+      }
+      if (reasonOnly) {
+        qs.set("stage_timeout_reason_code", reasonOnly);
+      }
+      if (groupBy === "environment" || groupBy === "reason_code") {
+        qs.set("stage_timeout_group_by", groupBy);
+      }
+      out.textContent = "请求中…";
+      groupedWrap.innerHTML = "";
+      rawJsonBox.textContent = "请求中…";
+      const r = await jyisApiFetch(API + "/audit/summary?" + qs.toString());
+      const txt = await r.text();
+      if (!r.ok) {
+        out.textContent = txt;
+        rawJsonBox.textContent = txt;
+        alert("查询失败 " + r.status + " " + txt.slice(0, 240));
+        return;
+      }
+      try {
+        const j = JSON.parse(txt);
+        const overview =
+          "stage_timeout_alert: total=" +
+          String(j.stage_timeout_alert_total || 0) +
+          ", hit=" +
+          String(j.stage_timeout_alert_hit_count || 0) +
+          ", miss=" +
+          String(j.stage_timeout_alert_miss_count || 0) +
+          ", hit_rate=" +
+          String(j.stage_timeout_alert_hit_rate || 0) +
+          "%";
+        const envRows = Array.isArray(j.stage_timeout_alert_env_breakdown) ? j.stage_timeout_alert_env_breakdown : [];
+        const envSummary = envRows.length
+          ? envRows
+              .map(row =>
+                [
+                  String(row.environment || "unknown"),
+                  "total=" + String(row.total || 0),
+                  "hit=" + String(row.hit_count || 0),
+                  "miss=" + String(row.miss_count || 0),
+                  "hit_rate=" + String(row.hit_rate || 0) + "%",
+                ].join(", ")
+              )
+              .join("\n")
+          : "暂无环境分组数据";
+        const groupedRows = Array.isArray(j.stage_timeout_alert_grouped) ? j.stage_timeout_alert_grouped : [];
+        const groupedLabel =
+          j.stage_timeout_group_by === "environment"
+            ? "分组维度：environment"
+            : j.stage_timeout_group_by === "reason_code"
+            ? "分组维度：reason_code"
+            : "分组维度：未开启";
+        const groupedSummary = groupedRows.length
+          ? groupedRows
+              .map(row =>
+                [
+                  String(row.group || "unknown"),
+                  "total=" + String(row.total || 0),
+                  "hit=" + String(row.hit_count || 0),
+                  "miss=" + String(row.miss_count || 0),
+                  "hit_rate=" + String(row.hit_rate || 0) + "%",
+                ].join(", ")
+              )
+              .join("\n")
+          : "暂无分组聚合数据";
+        const sortedGroupedRows = groupedRows.slice().sort((a, b) => {
+          if (sortBy === "total_desc") {
+            const totalCmp = Number(b.total || 0) - Number(a.total || 0);
+            if (totalCmp !== 0) return totalCmp;
+            return String(a.group || "").localeCompare(String(b.group || ""));
+          }
+          const hitRateCmp = Number(b.hit_rate || 0) - Number(a.hit_rate || 0);
+          if (hitRateCmp !== 0) return hitRateCmp;
+          const totalCmp = Number(b.total || 0) - Number(a.total || 0);
+          if (totalCmp !== 0) return totalCmp;
+          return String(a.group || "").localeCompare(String(b.group || ""));
+        });
+        const groupedTitle = groupedLabel + "，排序：" + (sortBy === "total_desc" ? "total_desc" : "hit_rate_desc");
+        if (sortedGroupedRows.length) {
+          const html =
+            "<table><thead><tr><th>group</th><th>total</th><th>hit</th><th>miss</th><th>hit_rate</th></tr></thead><tbody>" +
+            sortedGroupedRows
+              .map(
+                row =>
+                  "<tr><td>" +
+                  escapeHtml(String(row.group || "unknown")) +
+                  "</td><td>" +
+                  escapeHtml(String(row.total || 0)) +
+                  "</td><td>" +
+                  escapeHtml(String(row.hit_count || 0)) +
+                  "</td><td>" +
+                  escapeHtml(String(row.miss_count || 0)) +
+                  "</td><td>" +
+                  escapeHtml(String(row.hit_rate || 0)) +
+                  "%</td></tr>"
+              )
+              .join("") +
+            "</tbody></table>";
+          groupedWrap.innerHTML = "<div class='meta' style='margin-bottom:0.35rem'>" + escapeHtml(groupedTitle) + "</div>" + html;
+        } else {
+          groupedWrap.innerHTML = "<div class='meta'>" + escapeHtml(groupedTitle) + "，暂无分组聚合数据</div>";
+        }
+        out.textContent =
+          overview +
+          "\n\n按环境分组：\n" +
+          envSummary +
+          "\n\n" +
+          groupedLabel +
+          "\n" +
+          groupedSummary;
+        rawJsonBox.textContent = JSON.stringify(j, null, 2);
+      } catch (_) {
+        out.textContent = txt;
+        rawJsonBox.textContent = txt;
+      }
     }
 
     async function doApply(dry) {
@@ -901,6 +1148,8 @@
     document.getElementById("btnDry").addEventListener("click", () => doApply(true));
     document.getElementById("btnDisc").addEventListener("click", postDisc);
     document.getElementById("btnStageRefresh").addEventListener("click", loadStages);
+    document.getElementById("btnStageHealthCheck").addEventListener("click", stageHealthCheck);
+    document.getElementById("btnStageAuditQuery").addEventListener("click", stageTimeoutAuditQuery);
     document.getElementById("btnStageStartCurrent").addEventListener("click", () => runStageAction("start"));
     document.getElementById("btnStageCompleteCurrent").addEventListener("click", () => runStageAction("complete"));
     document.getElementById("btnStageApproveCurrent").addEventListener("click", () => runStageAction("approve"));

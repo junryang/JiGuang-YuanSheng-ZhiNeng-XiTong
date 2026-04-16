@@ -15,6 +15,11 @@ environment_policy:
     deny_on_missing_audit: true
     max_retry: 3
     risk_alert_cooldown_minutes: 30
+    stage_timeout_alert_cooldown_minutes: 30
+    stage_timeout_alert_enabled: true
+    stage_timeout_alert_allow_force: true
+    stage_timeout_alert_stage_overdue_threshold_minutes: 0
+    stage_timeout_alert_approval_overdue_threshold_minutes: 0
     risk_alert_trigger_score: 6
   staging:
     allow_optional_mapping: true
@@ -24,6 +29,11 @@ environment_policy:
     deny_on_missing_audit: true
     max_retry: 2
     risk_alert_cooldown_minutes: 20
+    stage_timeout_alert_cooldown_minutes: 20
+    stage_timeout_alert_enabled: true
+    stage_timeout_alert_allow_force: false
+    stage_timeout_alert_stage_overdue_threshold_minutes: 0
+    stage_timeout_alert_approval_overdue_threshold_minutes: 0
     risk_alert_trigger_score: 6
   prod:
     allow_optional_mapping: false
@@ -33,6 +43,11 @@ environment_policy:
     deny_on_missing_audit: true
     max_retry: 1
     risk_alert_cooldown_minutes: 10
+    stage_timeout_alert_cooldown_minutes: 10
+    stage_timeout_alert_enabled: true
+    stage_timeout_alert_allow_force: false
+    stage_timeout_alert_stage_overdue_threshold_minutes: 0
+    stage_timeout_alert_approval_overdue_threshold_minutes: 0
     risk_alert_trigger_score: 6
 
 thresholds:

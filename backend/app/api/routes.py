@@ -2242,6 +2242,21 @@ def audit_summary(
     policy_id: str | None = Query(None),
     environment: Environment | None = Query(None),
     reason_code_prefix: str | None = Query(None),
+    stage_timeout_hit_only: bool | None = Query(
+        None, description="仅在 project_stage_timeout_alert 事件内过滤命中(true)/未命中(false)"
+    ),
+    stage_timeout_env: Environment | None = Query(
+        None, description="仅在 project_stage_timeout_alert 事件内过滤环境(dev|staging|prod)"
+    ),
+    stage_timeout_policy_id: str | None = Query(
+        "project_stage_flow", description="仅在 project_stage_timeout_alert 事件内过滤 policy_id"
+    ),
+    stage_timeout_reason_code: str | None = Query(
+        None, description="仅在 project_stage_timeout_alert 事件内过滤 reason_code"
+    ),
+    stage_timeout_group_by: str | None = Query(
+        None, description="project_stage_timeout_alert 聚合分组维度：environment|reason_code"
+    ),
     audit=Depends(get_audit_store),
 ):
     return audit.summary(
@@ -2251,6 +2266,11 @@ def audit_summary(
         policy_id=policy_id,
         environment=environment,
         reason_code_prefix=reason_code_prefix,
+        stage_timeout_hit_only=stage_timeout_hit_only,
+        stage_timeout_env=stage_timeout_env,
+        stage_timeout_policy_id=stage_timeout_policy_id,
+        stage_timeout_reason_code=stage_timeout_reason_code,
+        stage_timeout_group_by=stage_timeout_group_by,
     )
 
 

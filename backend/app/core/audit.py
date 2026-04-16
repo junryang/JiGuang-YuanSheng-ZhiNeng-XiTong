@@ -84,6 +84,11 @@ class AuditStore:
         policy_id: Optional[str] = None,
         environment: Optional[Environment] = None,
         reason_code_prefix: Optional[str] = None,
+        stage_timeout_hit_only: Optional[bool] = None,
+        stage_timeout_env: Optional[Environment] = None,
+        stage_timeout_policy_id: Optional[str] = None,
+        stage_timeout_reason_code: Optional[str] = None,
+        stage_timeout_group_by: Optional[str] = None,
         top_limit: int = 5,
     ) -> Dict[str, Any]:
         ndays = max(1, min(int(days), 31))
@@ -97,6 +102,44 @@ class AuditStore:
         if reason_code_prefix and str(reason_code_prefix).strip():
             rpfx = str(reason_code_prefix).strip()
             rows = [e for e in rows if str(e.get("reason_code", "")).startswith(rpfx)]
+        if stage_timeout_hit_only is not None:
+            filtered_rows: List[Dict[str, Any]] = []
+            for e in rows:
+                if str(e.get("event_type", "")) != "project_stage_timeout_alert":
+                    continue
+                ctx = e.get("context") or {}
+                hits = ctx.get("hits") or {}
+                # Backward-compatible: support both nested `hits.*` and legacy top-level context keys.
+                stage_hit = bool(hits.get("stage_overdue_hit") is True or ctx.get("stage_overdue_hit") is True)
+                approval_hit = bool(hits.get("approval_overdue_hit") is True or ctx.get("approval_overdue_hit") is True)
+                merged_hit = bool(stage_hit or approval_hit)
+                if merged_hit == bool(stage_timeout_hit_only):
+                    filtered_rows.append(e)
+            rows = filtered_rows
+        if stage_timeout_env and str(stage_timeout_env).strip():
+            target_env = str(stage_timeout_env).strip()
+            rows = [
+                e
+                for e in rows
+                if str(e.get("event_type", "")) == "project_stage_timeout_alert"
+                and str(e.get("environment", "")) == target_env
+            ]
+        if stage_timeout_policy_id and str(stage_timeout_policy_id).strip():
+            target_policy_id = str(stage_timeout_policy_id).strip()
+            rows = [
+                e
+                for e in rows
+                if str(e.get("event_type", "")) == "project_stage_timeout_alert"
+                and str(e.get("policy_id", "")) == target_policy_id
+            ]
+        if stage_timeout_reason_code and str(stage_timeout_reason_code).strip():
+            target_reason_code = str(stage_timeout_reason_code).strip()
+            rows = [
+                e
+                for e in rows
+                if str(e.get("event_type", "")) == "project_stage_timeout_alert"
+                and str(e.get("reason_code", "")) == target_reason_code
+            ]
         now = datetime.now(timezone.utc).date()
         ordered_days: List[str] = []
         day_map: Dict[str, Dict[str, int]] = {}
@@ -138,6 +181,71 @@ class AuditStore:
         total_allowed = max(0, total_events - total_denied)
         denied_rate = round((total_denied / total_events) * 100, 1) if total_events > 0 else 0.0
         allowed_rate = round((total_allowed / total_events) * 100, 1) if total_events > 0 else 100.0
+        # Stage timeout alert explainability aggregates (for ops dashboard).
+        sta_rows = [e for e in rows if str(e.get("event_type", "")) == "project_stage_timeout_alert"]
+        sta_total = len(sta_rows)
+        sta_hit = 0
+        sta_miss = 0
+        sta_env_map: Dict[str, Dict[str, int]] = {}
+        for ev in sta_rows:
+            ctx = ev.get("context") or {}
+            hits = ctx.get("hits") or {}
+            stage_hit = bool(hits.get("stage_overdue_hit") is True or ctx.get("stage_overdue_hit") is True)
+            approval_hit = bool(hits.get("approval_overdue_hit") is True or ctx.get("approval_overdue_hit") is True)
+            merged_hit = bool(stage_hit or approval_hit)
+            if merged_hit:
+                sta_hit += 1
+            else:
+                sta_miss += 1
+            env = str(ev.get("environment") or "unknown")
+            cell = sta_env_map.setdefault(env, {"total": 0, "hit_count": 0, "miss_count": 0})
+            cell["total"] += 1
+            if merged_hit:
+                cell["hit_count"] += 1
+            else:
+                cell["miss_count"] += 1
+        sta_hit_rate = round((sta_hit / sta_total) * 100, 1) if sta_total > 0 else 0.0
+        sta_env_breakdown = [
+            {
+                "environment": k,
+                "total": v["total"],
+                "hit_count": v["hit_count"],
+                "miss_count": v["miss_count"],
+                "hit_rate": round((v["hit_count"] / v["total"]) * 100, 1) if v["total"] > 0 else 0.0,
+            }
+            for k, v in sorted(sta_env_map.items(), key=lambda x: x[0])
+        ]
+        sta_grouped: List[Dict[str, Any]] = []
+        group_key = str(stage_timeout_group_by or "").strip().lower()
+        if group_key in {"environment", "reason_code"}:
+            grouped_map: Dict[str, Dict[str, int]] = {}
+            for ev in sta_rows:
+                ctx = ev.get("context") or {}
+                hits = ctx.get("hits") or {}
+                stage_hit = bool(hits.get("stage_overdue_hit") is True or ctx.get("stage_overdue_hit") is True)
+                approval_hit = bool(hits.get("approval_overdue_hit") is True or ctx.get("approval_overdue_hit") is True)
+                merged_hit = bool(stage_hit or approval_hit)
+                gval = (
+                    str(ev.get("environment") or "unknown")
+                    if group_key == "environment"
+                    else str(ev.get("reason_code") or "UNKNOWN")
+                )
+                cell = grouped_map.setdefault(gval, {"total": 0, "hit_count": 0, "miss_count": 0})
+                cell["total"] += 1
+                if merged_hit:
+                    cell["hit_count"] += 1
+                else:
+                    cell["miss_count"] += 1
+            sta_grouped = [
+                {
+                    "group": g,
+                    "total": v["total"],
+                    "hit_count": v["hit_count"],
+                    "miss_count": v["miss_count"],
+                    "hit_rate": round((v["hit_count"] / v["total"]) * 100, 1) if v["total"] > 0 else 0.0,
+                }
+                for g, v in sorted(grouped_map.items(), key=lambda x: x[0])
+            ]
         return {
             "days": ndays,
             "trend": trend,
@@ -147,4 +255,11 @@ class AuditStore:
             "total_denied": total_denied,
             "allowed_rate": allowed_rate,
             "denied_rate": denied_rate,
+            "stage_timeout_alert_total": sta_total,
+            "stage_timeout_alert_hit_count": sta_hit,
+            "stage_timeout_alert_miss_count": sta_miss,
+            "stage_timeout_alert_hit_rate": sta_hit_rate,
+            "stage_timeout_alert_env_breakdown": sta_env_breakdown,
+            "stage_timeout_group_by": group_key if group_key in {"environment", "reason_code"} else None,
+            "stage_timeout_alert_grouped": sta_grouped,
         }

@@ -16,3 +16,8 @@ htmlcov/
 .DS_Store
 Thumbs.db
 .cursor/
+
+# runtime state & local logs (do not commit)
+backend/data/state.json
+scripts/logs/
+scripts/logs/*.log

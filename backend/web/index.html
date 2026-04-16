@@ -124,7 +124,7 @@
     </section>
     <section class="full-span">
       <h2>策略审计（最近）</h2>
-      <p class="hint">内存中的策略评估记录（<code>GET /api/v1/audit/events</code>）与聚合摘要（<code>GET /api/v1/audit/summary</code>，支持 <code>event_type_prefix / policy_id / environment / reason_code_prefix</code>）；服务重启后清空。</p>
+      <p class="hint">内存中的策略评估记录（<code>GET /api/v1/audit/events</code>）与聚合摘要（<code>GET /api/v1/audit/summary</code>，支持 <code>event_type_prefix / policy_id / environment / reason_code_prefix / stage_timeout_hit_only</code>）；服务重启后清空。</p>
       <p class="cmds" style="margin-bottom:0.5rem">
         <label class="hint">类型前缀
           <select id="auditFilter" style="margin-left:0.35rem;padding:0.25rem 0.5rem;border-radius:6px;border:1px solid var(--border);background:#0d1117;color:var(--text)">
@@ -151,6 +151,13 @@
         </label>
         <label class="hint">原因码前缀
           <input id="auditReasonCodeFilter" type="text" placeholder="如 LAW_" style="margin-left:0.35rem;padding:0.25rem 0.5rem;border-radius:6px;border:1px solid var(--border);background:#0d1117;color:var(--text);width:9rem" />
+        </label>
+        <label class="hint">阶段超时命中
+          <select id="stageTimeoutHitFilter" style="margin-left:0.35rem;padding:0.25rem 0.5rem;border-radius:6px;border:1px solid var(--border);background:#0d1117;color:var(--text)">
+            <option value="">全部</option>
+            <option value="true">仅命中</option>
+            <option value="false">仅未命中</option>
+          </select>
         </label>
         <button type="button" class="secondary" id="btnAuditApply">应用筛选</button>
       </p>
@@ -288,11 +295,16 @@
         const env = ef && ef.value ? String(ef.value).trim() : "";
         const rf = document.getElementById("auditReasonCodeFilter");
         const rcPrefix = rf && rf.value ? String(rf.value).trim() : "";
+        const shf = document.getElementById("stageTimeoutHitFilter");
+        const stageTimeoutHitOnly = shf && shf.value ? String(shf.value).trim() : "";
         const qs = new URLSearchParams({ limit: "12" });
         if (pfx) qs.set("event_type_prefix", pfx);
         if (pid) qs.set("policy_id", pid);
         if (env) qs.set("environment", env);
         if (rcPrefix) qs.set("reason_code_prefix", rcPrefix);
+        if (stageTimeoutHitOnly === "true" || stageTimeoutHitOnly === "false") {
+          qs.set("stage_timeout_hit_only", stageTimeoutHitOnly);
+        }
         const [r, rs] = await Promise.all([
           jyisApiFetch(API + "/audit/events?" + qs.toString()),
           jyisApiFetch(API + "/audit/summary?" + qs.toString() + "&days=7&top_limit=5"),
