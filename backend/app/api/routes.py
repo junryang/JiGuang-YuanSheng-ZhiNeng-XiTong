@@ -1628,12 +1628,15 @@ def git_sync_summary(
     if minutes_since_last_event is None:
         sync_silence_state = "missing"
         sync_silence_state_rank = 2
+        sync_silence_event_present = False
     elif sync_silence_warning:
         sync_silence_state = "overdue"
         sync_silence_state_rank = 1
+        sync_silence_event_present = True
     else:
         sync_silence_state = "within"
         sync_silence_state_rank = 0
+        sync_silence_event_present = True
 
     return {
         "days": ndays,
@@ -1664,6 +1667,7 @@ def git_sync_summary(
         "sync_silence_headroom_minutes": sync_silence_headroom_minutes,
         "sync_silence_state": sync_silence_state,
         "sync_silence_state_rank": sync_silence_state_rank,
+        "sync_silence_event_present": sync_silence_event_present,
         "consecutive_failure_streak": consecutive_failure_streak,
         "consecutive_non_success_streak": consecutive_non_success_streak,
         "sync_health_level": sync_health_level,
@@ -2010,12 +2014,15 @@ def analytics_reports(
     if minutes_since_last_git_sync_event is None:
         git_sync_event_silence_state = "missing"
         git_sync_event_silence_state_rank = 2
+        git_sync_event_silence_event_present = False
     elif git_sync_event_silence_warning:
         git_sync_event_silence_state = "overdue"
         git_sync_event_silence_state_rank = 1
+        git_sync_event_silence_event_present = True
     else:
         git_sync_event_silence_state = "within"
         git_sync_event_silence_state_rank = 0
+        git_sync_event_silence_event_present = True
     return {
         "report_type": norm_type,
         "days": days,
@@ -2110,6 +2117,7 @@ def analytics_reports(
         "git_sync_event_silence_headroom_minutes": git_sync_event_silence_headroom_minutes,
         "git_sync_event_silence_state": git_sync_event_silence_state,
         "git_sync_event_silence_state_rank": git_sync_event_silence_state_rank,
+        "git_sync_event_silence_event_present": git_sync_event_silence_event_present,
         "last_git_sync_success_at": last_git_sync_success_at.isoformat() if last_git_sync_success_at else None,
         "minutes_since_last_git_sync_success": _minutes_since(last_git_sync_success_at, now),
         "last_git_sync_failure_at": last_git_sync_failure_at.isoformat() if last_git_sync_failure_at else None,
