@@ -631,3 +631,15 @@
       - 口径：`(成功审计投递计数 - 失败审计投递计数) / days`（摘要与报告窗口 `days` 最小按 1），保留 2 位小数，与 `git_sync_net_success_density_per_day` 语义对齐。
       - 目标：在成功/失败分密度之外，一眼判断审计旁路净产出趋势（正值偏健康，负值偏风险）。
       - 补充最小回归断言，校验字段存在且类型为 `float`，保持兼容增强。
+
+72. Git 摘要与运营风险报告补充审计投递覆盖率（完成后增强）
+    - 文件：`backend/app/api/routes.py`、`backend/tests/test_api_smoke.py`
+    - 变更：
+      - `GET /api/v1/ops/git-sync/summary` 新增：
+        - `audit_delivery_tagged_count`（`context.audit_delivery` 为 `success|failed` 的事件条数）
+        - `audit_delivery_coverage_rate`（`tagged_count / totals.total * 100`，保留 1 位小数；无事件时为 `0.0`）
+      - `GET /api/v1/analytics/reports?report_type=ops_risk` 新增：
+        - `git_sync_audit_delivery_tagged_count`
+        - `git_sync_audit_delivery_coverage_rate`
+      - 目标：衡量同步事件中有多少比例回传了审计投递状态，便于发现“主链路有事件但旁路未打点”的静默缺口。
+      - 补充最小回归断言，校验字段存在且类型正确（`int`/`float`），保持兼容增强。
