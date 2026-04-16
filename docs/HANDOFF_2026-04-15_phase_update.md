@@ -988,3 +988,24 @@
       - `6d82bb8`（`docs(handoff): append items 105-106 for silence state codes`）
     - 推送结果：
       - `git push origin main` 一次成功：`0b38756..6d82bb8  main -> main`
+
+107. Git 同步摘要与运营风险报告补充静默严重度分数字段（完成后增强）
+    - 文件：`backend/app/api/routes.py`、`backend/tests/test_api_smoke.py`
+    - 接口字段（兼容追加，不破坏既有字段）：
+      - `GET /api/v1/ops/git-sync/summary` 新增：`sync_silence_severity_score`（`float|null`）
+      - `GET /api/v1/analytics/reports?report_type=ops_risk` 新增：`git_sync_event_silence_severity_score`（`float|null`）
+    - 统计口径：
+      - 当前实现复用既有 `*_silence_overdue_rate`：
+        - 有事件时：与 `*_silence_overdue_rate` 数值一致（within 为 0.0，overdue 为正值）
+        - 无事件时：为 `null`
+      - 目标：为看板提供单字段排序/阈值判断入口，减少多字段推导。
+    - 测试覆盖：
+      - 最小回归：`python -m pytest tests/test_api_smoke.py -q --tb=short`
+      - 结果：`48 passed in 141.13s`
+      - 新增断言：字段存在且类型正确（当前样例为 `float`）。
+    - 推送结果：
+      - 见条目 108。
+
+108. 条目 107 同步远端记录（运维追溯）
+    - 本地提交：（待 commit 后回填）
+    - 推送结果：（待 push/重试后回填）
