@@ -1192,5 +1192,11 @@
       - 见条目 124。
 
 124. 条目 123 同步远端记录（运维追溯）
-    - 本地提交：（待回填）
-    - 推送结果：（待 push/重试后回填）
+    - 本地提交：
+      - `ec0a89d`（`feat(ops): add git sync silence severity level codes`）
+      - `01fe9cf`（`docs(handoff): append items 123-124 for silence severity codes`）
+    - 推送结果：
+      - 第 1 次推送失败：`Could not resolve host: github.com`
+      - 第 2 次推送失败：`Recv failure: Connection was reset`
+      - 第 3 次推送失败：`schannel: failed to receive handshake, SSL/TLS connection failed`
+      - 第 4 次推送成功：`dbc81e8..01fe9cf  main -> main`
