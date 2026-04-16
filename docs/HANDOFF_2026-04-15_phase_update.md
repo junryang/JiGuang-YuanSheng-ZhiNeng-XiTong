@@ -963,3 +963,25 @@
       - 首次 `git push origin main` 失败：`Could not resolve host: github.com`
       - 第 2 次重试失败：`Recv failure: Connection was reset`
       - 第 3 次重试成功：`2c20841..357afcf  main -> main`
+
+105. Git 同步摘要与运营风险报告补充静默状态短码字段（完成后增强）
+    - 文件：`backend/app/api/routes.py`、`backend/tests/test_api_smoke.py`
+    - 接口字段（兼容追加，不破坏既有字段）：
+      - `GET /api/v1/ops/git-sync/summary` 新增：`sync_silence_state_code`（`MISSING|WITHIN|OVERDUE`）
+      - `GET /api/v1/analytics/reports?report_type=ops_risk` 新增：`git_sync_event_silence_state_code`（`MISSING|WITHIN|OVERDUE`）
+    - 统计口径：
+      - 与既有 `*_silence_state` / `*_silence_state_label` 一一对应：
+        - `missing` → `MISSING`
+        - `within` → `WITHIN`
+        - `overdue` → `OVERDUE`
+      - 目标：为日志、导出、规则表达式与外部系统集成提供稳定短码，避免消费端依赖中文标签或低层枚举再映射。
+    - 测试覆盖：
+      - 最小回归：`python -m pytest tests/test_api_smoke.py -q --tb=short`
+      - 结果：`48 passed in 139.67s`
+      - 新增断言：字段存在且短码枚举值合法。
+    - 推送结果：
+      - 见条目 106。
+
+106. 条目 105 同步远端记录（运维追溯）
+    - 本地提交：（待 commit 后回填）
+    - 推送结果：（待 push/重试后回填）
