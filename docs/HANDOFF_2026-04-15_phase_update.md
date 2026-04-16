@@ -620,3 +620,14 @@
       - 口径：成功/失败审计投递计数分别除以摘要窗口 `days` 或报告参数 `days`（最小按 1），保留 2 位小数，与既有 Git 事件密度字段口径一致。
       - 目标：横向对比不同时间窗口内审计旁路活跃度，辅助判断“偶发失败”与“持续高压”。
       - 补充最小回归断言，校验字段存在且类型为 `float`，保持兼容增强。
+
+71. Git 摘要与运营风险报告补充审计投递净日均密度（完成后增强）
+    - 文件：`backend/app/api/routes.py`、`backend/tests/test_api_smoke.py`
+    - 变更：
+      - `GET /api/v1/ops/git-sync/summary` 新增：
+        - `audit_delivery_net_density_per_day`
+      - `GET /api/v1/analytics/reports?report_type=ops_risk` 新增：
+        - `git_sync_audit_delivery_net_density_per_day`
+      - 口径：`(成功审计投递计数 - 失败审计投递计数) / days`（摘要与报告窗口 `days` 最小按 1），保留 2 位小数，与 `git_sync_net_success_density_per_day` 语义对齐。
+      - 目标：在成功/失败分密度之外，一眼判断审计旁路净产出趋势（正值偏健康，负值偏风险）。
+      - 补充最小回归断言，校验字段存在且类型为 `float`，保持兼容增强。

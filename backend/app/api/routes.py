@@ -1521,6 +1521,9 @@ def git_sync_summary(
         audit_delivery_net_health_level = "healthy"
     audit_delivery_success_density_per_day = round(audit_delivery_success_count / ndays, 2)
     audit_delivery_failed_density_per_day = round(audit_delivery_failed_count / ndays, 2)
+    audit_delivery_net_density_per_day = round(
+        (audit_delivery_success_count - audit_delivery_failed_count) / ndays, 2
+    )
     top_branches = sorted(
         [{"branch": b, **stats} for b, stats in branch_totals.items()],
         key=lambda x: (-x["total"], x["branch"]),
@@ -1618,6 +1621,7 @@ def git_sync_summary(
         "audit_delivery_net_health_warning": audit_delivery_net_health_level != "healthy",
         "audit_delivery_success_density_per_day": audit_delivery_success_density_per_day,
         "audit_delivery_failed_density_per_day": audit_delivery_failed_density_per_day,
+        "audit_delivery_net_density_per_day": audit_delivery_net_density_per_day,
         "last_audit_delivery_success_at": (
             last_audit_delivery_success_at.isoformat() if last_audit_delivery_success_at else None
         ),
@@ -1785,6 +1789,9 @@ def analytics_reports(
     git_sync_audit_delivery_failed_density_per_day = round(
         git_audit_delivery_failed / max(1, int(days)), 2
     )
+    git_sync_audit_delivery_net_density_per_day = round(
+        (git_audit_delivery_success - git_audit_delivery_failed) / max(1, int(days)), 2
+    )
     git_net_success_rate = round(((git_success - git_failure) / git_total) * 100, 1) if git_total > 0 else 0.0
     git_event_density_per_day = round(git_total / max(1, int(days)), 2)
     git_success_density_per_day = round(git_success / max(1, int(days)), 2)
@@ -1855,6 +1862,7 @@ def analytics_reports(
         "git_sync_audit_delivery_net_health_warning": git_sync_audit_delivery_net_health_level != "healthy",
         "git_sync_audit_delivery_success_density_per_day": git_sync_audit_delivery_success_density_per_day,
         "git_sync_audit_delivery_failed_density_per_day": git_sync_audit_delivery_failed_density_per_day,
+        "git_sync_audit_delivery_net_density_per_day": git_sync_audit_delivery_net_density_per_day,
         "git_sync_net_success_rate": git_net_success_rate,
         "git_sync_failure_pressure_index": git_sync_failure_pressure_index,
         "git_sync_event_density_per_day": git_event_density_per_day,
