@@ -1313,7 +1313,7 @@
       - `cd backend && python -m pytest tests/test_api_smoke.py -q --tb=short`：`48 passed in 1.75s`
       - `cd backend && python -m pytest tests/test_project_stages_api.py -q --tb=short`：`2 passed in 0.93s`
     - 推送结果：
-      - 第 1 次推送结果：`[待填]`
+      - 第 1 次推送成功：`bdf41d1..44d3800  main -> main`
 
 131. 项目详情页接入阶段生命周期视图与操作入口（Phase4 前端集成延伸）
     - 文件：
@@ -1332,7 +1332,7 @@
       - `cd backend && python -m pytest tests/test_project_stages_api.py -q --tb=short`：`2 passed in 1.00s`
       - `cd backend && python -m pytest tests/test_api_smoke.py -q --tb=short`：`48 passed in 2.05s`
     - 推送结果：
-      - 第 1 次推送结果：`[待填]`
+      - 第 1 次推送成功：`bdf41d1..44d3800  main -> main`
 
 132. 阶段单交付物上传闭环与项目页定义展示（Phase4 前端集成继续）
     - 文件：
@@ -1353,7 +1353,7 @@
       - `cd backend && python -m pytest tests/test_ui_pages_smoke.py -q --tb=short`：`11 passed in 1.21s`
       - `cd backend && python -m pytest tests/test_api_smoke.py -q --tb=short`：`48 passed in 2.24s`
     - 推送结果：
-      - 第 1 次推送结果：`[待填]`
+      - 第 1 次推送成功：`bdf41d1..44d3800  main -> main`
 
 133. 阶段状态机对齐生命周期规范：complete->review（需审批）且 approve 后推进下一阶段
     - 文件：
@@ -1373,7 +1373,7 @@
       - `cd backend && python -m pytest tests/test_ui_pages_smoke.py -q --tb=short`：`11 passed in 1.15s`
       - `cd backend && python -m pytest tests/test_api_smoke.py -q --tb=short`：`48 passed in 2.63s`
     - 推送结果：
-      - 第 1 次推送结果：`[待填]`
+      - 第 1 次推送成功：`bdf41d1..44d3800  main -> main`
 
 134. 阶段交付物模板与 Schema 元数据回填（对齐 PROJECT_LIFECYCLE_SPEC）
     - 文件：
@@ -1388,7 +1388,7 @@
       - `cd backend && python -m pytest tests/test_project_stages_api.py -q --tb=short`：`3 passed in 1.15s`
       - `cd backend && python -m pytest tests/test_api_smoke.py -q --tb=short`：`48 passed in 3.08s`
     - 推送结果：
-      - 第 1 次推送结果：`[待填]`
+      - 第 1 次推送成功：`bdf41d1..44d3800  main -> main`
 
 135. 阶段参与者（participants）与审批元数据可视化对齐（生命周期规范补齐）
     - 文件：
@@ -1410,7 +1410,7 @@
       - `cd backend && python -m pytest tests/test_ui_pages_smoke.py -q --tb=short`：`11 passed in 1.34s`
       - `cd backend && python -m pytest tests/test_api_smoke.py -q --tb=short`：`48 passed in 3.79s`
     - 推送结果：
-      - 第 1 次推送结果：`[待填]`
+      - 第 1 次推送成功：`bdf41d1..44d3800  main -> main`
 
 136. 测试环境 state 存储隔离：消除并行 pytest 写 state.json 的竞态 404
     - 文件：
@@ -1428,7 +1428,7 @@
       - 并行执行 `cd backend && python -m pytest tests/test_api_smoke.py -q --tb=short`：`48 passed in 1.91s`
       - 并行执行 `cd backend && python -m pytest tests/test_project_stages_api.py -q --tb=short`：`3 passed in 1.28s`
     - 推送结果：
-      - 第 1 次推送结果：`[待填]`
+      - 第 1 次推送成功：`bdf41d1..44d3800  main -> main`
 
 137. 阶段生命周期动作接入审计（AuditStore）：start/complete/approve/upload 全链路可追溯
     - 文件：
@@ -1451,7 +1451,7 @@
       - `cd backend && python -m pytest tests/test_project_stages_api.py -q --tb=short`：`3 passed in 1.32s`
       - `cd backend && python -m pytest tests/test_api_smoke.py -q --tb=short`：`48 passed in 1.92s`
     - 推送结果：
-      - 第 1 次推送结果：`[待填]`
+      - 第 1 次推送成功：`bdf41d1..44d3800  main -> main`
 
 138. 条件审批可执行化：引入项目预算 budget 并动态选择 P04 实际审批人
     - 文件：
@@ -1473,7 +1473,7 @@
       - `cd backend && python -m pytest tests/test_ui_pages_smoke.py -q --tb=short`：`11 passed in 1.31s`
       - `cd backend && python -m pytest tests/test_api_smoke.py -q --tb=short`：`48 passed in 1.94s`
     - 推送结果：
-      - 第 1 次推送结果：`[待填]`
+      - 第 1 次推送成功：`bdf41d1..44d3800  main -> main`
 
 139. 阶段审批“谁在批”校验落地：approve/reject 可选携带 approver_role/level 并做匹配校验
     - 文件：
@@ -1493,7 +1493,7 @@
       - `cd backend && python -m pytest tests/test_project_stages_api.py -q --tb=short`：`3 passed in 1.35s`
       - `cd backend && python -m pytest tests/test_api_smoke.py -q --tb=short`：`48 passed in 1.97s`
     - 推送结果：
-      - 第 1 次推送结果：`[待填]`
+      - 第 1 次推送成功：`bdf41d1..44d3800  main -> main`
 
 140. staging/prod 环境强制审批人身份：approve/reject 必须携带 approver_role/level
     - 文件：
@@ -1509,7 +1509,7 @@
       - `cd backend && python -m pytest tests/test_project_stages_api.py -q --tb=short`：`4 passed in 1.41s`
       - `cd backend && python -m pytest tests/test_api_smoke.py -q --tb=short`：`48 passed in 1.85s`
     - 推送结果：
-      - 第 1 次推送结果：`[待填]`
+      - 第 1 次推送成功：`bdf41d1..44d3800  main -> main`
 
 141. 项目页阶段审批可用性增强：环境/预算/条件触发提示 + 一键复制审批身份 JSON
     - 文件：
@@ -1526,7 +1526,7 @@
       - `cd backend && python -m pytest tests/test_ui_pages_smoke.py -q --tb=short`：`11 passed in 1.45s`
       - `cd backend && python -m pytest tests/test_api_smoke.py -q --tb=short`：`48 passed in 1.89s`
     - 推送结果：
-      - 第 1 次推送结果：`[待填]`
+      - 第 1 次推送成功：`bdf41d1..44d3800  main -> main`
 
 142. 审批身份字段防绕过收口：只要出现 approver_role/level 任一字段，必须两者齐全
     - 文件：
@@ -1543,7 +1543,7 @@
       - `cd backend && python -m pytest tests/test_project_stages_api.py -q --tb=short`：`4 passed in 1.41s`
       - `cd backend && python -m pytest tests/test_api_smoke.py -q --tb=short`：`48 passed in 1.91s`
     - 推送结果：
-      - 第 1 次推送结果：`[待填]`
+      - 第 1 次推送成功：`bdf41d1..44d3800  main -> main`
 
 143. 阶段审批历史落盘与项目页展示：新增 approval_history[] 追溯审批决策
     - 文件：
@@ -1564,7 +1564,7 @@
       - `cd backend && python -m pytest tests/test_ui_pages_smoke.py -q --tb=short`：`11 passed in 1.52s`
       - `cd backend && python -m pytest tests/test_api_smoke.py -q --tb=short`：`48 passed in 1.96s`
     - 推送结果：
-      - 第 1 次推送结果：`[待填]`
+      - 第 1 次推送成功：`bdf41d1..44d3800  main -> main`
 
 144. 阶段审批同步沉淀到项目讨论（project_discussions）：实现讨论/审计/阶段历史三处互证
     - 文件：
@@ -1579,4 +1579,4 @@
       - `cd backend && python -m pytest tests/test_project_stages_api.py -q --tb=short`：`4 passed in 1.40s`
       - `cd backend && python -m pytest tests/test_api_smoke.py -q --tb=short`：`48 passed in 1.89s`
     - 推送结果：
-      - 第 1 次推送结果：`[待填]`
+      - 第 1 次推送成功：`bdf41d1..44d3800  main -> main`
