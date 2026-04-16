@@ -730,3 +730,6 @@
       - `GET /api/v1/analytics/reports?report_type=ops_risk` 新增：`last_git_sync_audit_delivery_untagged_at`、`minutes_since_last_git_sync_audit_delivery_untagged`。
       - 口径：基于非法标记与空标记最近时钟取并集最近值（`max(last_invalid_at, last_empty_at)`）；若其中一类不存在，则回退到另一类；两类均不存在则为 `null`。
       - 最小回归：补充字段存在性与 `str`/`float` 类型断言。
+
+86. 条目 85 同步远端记录（运维追溯）
+    - 本地提交：`e0ddc37`（`feat(ops): audit_delivery untagged last-seen timestamps`），已推送至 `origin/main`。
