@@ -321,6 +321,8 @@ def test_git_sync_summary_endpoint():
     assert "minutes_since_last_audit_delivery_invalid" in body
     assert "audit_delivery_empty_count" in body
     assert "audit_delivery_empty_rate" in body
+    assert "last_audit_delivery_empty_at" in body
+    assert "minutes_since_last_audit_delivery_empty" in body
     assert "last_audit_delivery_success_at" in body
     assert "last_audit_delivery_failed_at" in body
     assert "minutes_since_last_audit_delivery_success" in body
@@ -384,6 +386,8 @@ def test_git_sync_summary_endpoint():
     assert isinstance(body["minutes_since_last_audit_delivery_invalid"], float)
     assert isinstance(body["audit_delivery_empty_count"], int)
     assert isinstance(body["audit_delivery_empty_rate"], float)
+    assert isinstance(body["last_audit_delivery_empty_at"], str)
+    assert isinstance(body["minutes_since_last_audit_delivery_empty"], float)
     assert isinstance(body["last_audit_delivery_success_at"], str)
     assert isinstance(body["last_audit_delivery_failed_at"], str)
     assert isinstance(body["minutes_since_last_audit_delivery_success"], float)
@@ -616,6 +620,8 @@ def test_analytics_reports_project_execution_and_ops_risk():
     assert "minutes_since_last_git_sync_audit_delivery_invalid" in opsb
     assert "git_sync_audit_delivery_empty_count" in opsb
     assert "git_sync_audit_delivery_empty_rate" in opsb
+    assert "last_git_sync_audit_delivery_empty_at" in opsb
+    assert "minutes_since_last_git_sync_audit_delivery_empty" in opsb
     assert "git_sync_net_success_rate" in opsb
     assert "git_sync_failure_pressure_index" in opsb
     assert "git_sync_event_density_per_day" in opsb
@@ -673,6 +679,8 @@ def test_analytics_reports_project_execution_and_ops_risk():
     assert isinstance(opsb["git_sync_audit_delivery_empty_rate"], float)
     assert opsb["git_sync_audit_delivery_empty_count"] >= 1
     assert opsb["git_sync_audit_delivery_empty_rate"] > 0.0
+    assert isinstance(opsb["last_git_sync_audit_delivery_empty_at"], str)
+    assert isinstance(opsb["minutes_since_last_git_sync_audit_delivery_empty"], float)
     assert isinstance(opsb["git_sync_net_success_rate"], float)
     assert isinstance(opsb["git_sync_failure_pressure_index"], float)
     assert isinstance(opsb["git_sync_event_density_per_day"], float)

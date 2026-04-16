@@ -1381,6 +1381,7 @@ def git_sync_summary(
     last_audit_delivery_success_at: datetime | None = None
     last_audit_delivery_failed_at: datetime | None = None
     last_audit_delivery_invalid_at: datetime | None = None
+    last_audit_delivery_empty_at: datetime | None = None
     last_success_at: datetime | None = None
     last_failure_at: datetime | None = None
     last_skipped_at: datetime | None = None
@@ -1429,6 +1430,8 @@ def git_sync_summary(
                 last_audit_delivery_invalid_at = ts
         else:
             audit_delivery_empty_count += 1
+            if last_audit_delivery_empty_at is None or ts > last_audit_delivery_empty_at:
+                last_audit_delivery_empty_at = ts
         if last_event_at is None or ts > last_event_at:
             last_event_at = ts
         if status == "success" and (last_success_at is None or ts > last_success_at):
@@ -1657,6 +1660,10 @@ def git_sync_summary(
         "minutes_since_last_audit_delivery_invalid": _minutes_since(last_audit_delivery_invalid_at, now_hour),
         "audit_delivery_empty_count": audit_delivery_empty_count,
         "audit_delivery_empty_rate": audit_delivery_empty_rate,
+        "last_audit_delivery_empty_at": (
+            last_audit_delivery_empty_at.isoformat() if last_audit_delivery_empty_at else None
+        ),
+        "minutes_since_last_audit_delivery_empty": _minutes_since(last_audit_delivery_empty_at, now_hour),
         "last_audit_delivery_success_at": (
             last_audit_delivery_success_at.isoformat() if last_audit_delivery_success_at else None
         ),
@@ -1763,6 +1770,7 @@ def analytics_reports(
     git_audit_delivery_invalid = 0
     git_audit_delivery_empty = 0
     last_git_sync_audit_delivery_invalid_at = None
+    last_git_sync_audit_delivery_empty_at = None
     for e in git_events:
         context = e.get("context") or {}
         st = str(context.get("status", "")).strip().lower()
@@ -1779,6 +1787,12 @@ def analytics_reports(
                 last_git_sync_audit_delivery_invalid_at = ts
         elif not audit_delivery:
             git_audit_delivery_empty += 1
+            ts = _parse_utc_iso(e.get("timestamp"))
+            if ts and (
+                last_git_sync_audit_delivery_empty_at is None
+                or ts > last_git_sync_audit_delivery_empty_at
+            ):
+                last_git_sync_audit_delivery_empty_at = ts
     failure_reason_counter: dict[str, int] = {}
     for e in git_events:
         if str((e.get("context") or {}).get("status", "")).lower() != "failure":
@@ -1947,6 +1961,14 @@ def analytics_reports(
         ),
         "git_sync_audit_delivery_empty_count": git_audit_delivery_empty,
         "git_sync_audit_delivery_empty_rate": git_sync_audit_delivery_empty_rate,
+        "last_git_sync_audit_delivery_empty_at": (
+            last_git_sync_audit_delivery_empty_at.isoformat()
+            if last_git_sync_audit_delivery_empty_at
+            else None
+        ),
+        "minutes_since_last_git_sync_audit_delivery_empty": _minutes_since(
+            last_git_sync_audit_delivery_empty_at, now
+        ),
         "git_sync_net_success_rate": git_net_success_rate,
         "git_sync_failure_pressure_index": git_sync_failure_pressure_index,
         "git_sync_event_density_per_day": git_event_density_per_day,

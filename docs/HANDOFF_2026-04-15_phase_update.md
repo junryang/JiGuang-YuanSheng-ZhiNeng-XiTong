@@ -692,3 +692,10 @@
 
 78. 条目 77 同步远端记录（运维追溯）
     - 本地提交：`570c8da`（`feat(ops): audit_delivery empty breakdown for git summary and ops_risk`），已推送至 `origin/main`。
+
+79. Git 摘要与运营风险报告补充审计投递「空标记」最近时钟（完成后增强）
+    - 文件：`backend/app/api/routes.py`、`backend/tests/test_api_smoke.py`
+    - 变更：
+      - `GET /api/v1/ops/git-sync/summary` 新增：`last_audit_delivery_empty_at`、`minutes_since_last_audit_delivery_empty`（在窗口与过滤条件下，取最近一次 `audit_delivery` 为空的同步事件时间戳，与条目 64/75 的 success/failed/invalid 时钟字段对称）。
+      - `GET /api/v1/analytics/reports?report_type=ops_risk` 新增：`last_git_sync_audit_delivery_empty_at`、`minutes_since_last_git_sync_audit_delivery_empty`（仅对 `context.status` 合法且 `audit_delivery` 为空的事件取最近时间）。
+      - 最小回归：在既有「空标记」样例上断言新字段类型（`str`/`float`）。
