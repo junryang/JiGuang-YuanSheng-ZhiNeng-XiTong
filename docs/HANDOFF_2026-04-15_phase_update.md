@@ -1007,5 +1007,8 @@
       - 见条目 108。
 
 108. 条目 107 同步远端记录（运维追溯）
-    - 本地提交：（待 commit 后回填）
-    - 推送结果：（待 push/重试后回填）
+    - 本地提交：
+      - `d18cd2d`（`feat(ops): add git sync silence severity scores`）
+      - `6931ef2`（`docs(handoff): append items 107-108 for silence severity scores`）
+    - 推送结果：
+      - `git push origin main` 一次成功：`d3ef134..6931ef2  main -> main`
