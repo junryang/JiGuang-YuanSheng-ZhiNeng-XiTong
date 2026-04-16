@@ -226,6 +226,27 @@ def test_ui_project_detail_page():
     assert "sec-approval".encode("utf-8") in r.content
     assert "里程碑".encode("utf-8") in r.content
     assert "sec-milestones".encode("utf-8") in r.content
+    assert "阶段生命周期".encode("utf-8") in r.content
+    assert "sec-stages".encode("utf-8") in r.content
+    assert "/projects/".encode("utf-8") in r.content
+    assert "/stages".encode("utf-8") in r.content
+    assert "stageDeliverablesJson".encode("utf-8") in r.content
+    assert "stageDefBody".encode("utf-8") in r.content
+    assert "stageApprovalPill".encode("utf-8") in r.content
+    assert "btnCopyApproverJson".encode("utf-8") in r.content
+    assert "stageEnvBudgetPill".encode("utf-8") in r.content
+    assert "stageConditionPill".encode("utf-8") in r.content
+    assert "stageApproverReqPill".encode("utf-8") in r.content
+    assert "stageApprHistBody".encode("utf-8") in r.content
+    assert "stagePartBody".encode("utf-8") in r.content
+    assert "stageDeliverableName".encode("utf-8") in r.content
+    assert "stageDeliverableOneJson".encode("utf-8") in r.content
+    assert "btnStageUploadOne".encode("utf-8") in r.content
+    assert "/deliverables/".encode("utf-8") in r.content
+    assert "btnStageStartCurrent".encode("utf-8") in r.content
+    assert "btnStageCompleteCurrent".encode("utf-8") in r.content
+    assert "btnStageApproveCurrent".encode("utf-8") in r.content
+    assert "btnStageRejectCurrent".encode("utf-8") in r.content
     assert "执行状态".encode("utf-8") in r.content
     assert "data-status-action".encode("utf-8") in r.content
     assert "milestonesJson".encode("utf-8") in r.content

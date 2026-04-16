@@ -342,6 +342,7 @@ class CreateProjectRequest(BaseModel):
     law: list[str] = Field(default_factory=list)
     tags: list[str] = Field(default_factory=list, description="项目标签（v1.1）")
     acceptance_contract: str = Field("", description="委托/验收约定引用（CEO-POLICY-12）")
+    budget: int | None = Field(None, ge=0, description="项目预算（用于条件审批等规则）")
     staging_precheck: StagingPrecheck | None = None
 
 
@@ -352,6 +353,7 @@ class UpdateProjectRequest(BaseModel):
     environment: Environment | None = None
     tags: list[str] | None = None
     milestones: Optional[List[Dict[str, Any]]] = None
+    budget: int | None = Field(None, ge=0, description="项目预算（用于条件审批等规则）")
     retrospective_report: str | None = Field(None, max_length=20000, description="项目复盘报告（Markdown 或纯文本）")
 
 
@@ -901,6 +903,7 @@ def create_project(
         "law": payload.law,
         "tags": [str(x).strip() for x in (payload.tags or []) if str(x).strip()][:20],
         "acceptance_contract": contract_ref,
+        "budget": payload.budget,
         "staging_precheck": payload.staging_precheck.model_dump() if payload.staging_precheck else None,
     }
     return store.create_project(record)

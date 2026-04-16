@@ -120,6 +120,63 @@
       <textarea id="milestonesJson" class="mono" style="min-height:120px;font-size:0.78rem;margin-top:0.25rem"></textarea>
       <button type="button" class="secondary" id="btnSaveMilestones" style="margin-top:0.35rem">保存里程碑</button>
     </section>
+    <section id="sec-stages">
+      <h2>阶段生命周期</h2>
+      <p class="meta">对接 <code>/projects/{id}/stages</code>，展示 9 阶段生命周期，并支持对当前阶段执行 start / complete / approve / reject。</p>
+      <div class="row" style="margin-bottom:0.5rem">
+        <span class="pill" id="stageCurrentPill">当前阶段：—</span>
+        <button type="button" class="secondary" id="btnStageRefresh">刷新阶段</button>
+      </div>
+      <div style="overflow:auto">
+        <table>
+          <thead><tr><th>阶段</th><th>Phase</th><th>状态</th><th>负责人</th><th>操作</th></tr></thead>
+          <tbody id="stageBody"></tbody>
+        </table>
+      </div>
+      <div class="row" style="margin-top:0.65rem">
+        <button type="button" id="btnStageStartCurrent">开始当前阶段</button>
+        <button type="button" id="btnStageCompleteCurrent">完成当前阶段</button>
+        <button type="button" id="btnStageApproveCurrent">通过当前阶段</button>
+        <button type="button" class="secondary" id="btnStageRejectCurrent">驳回当前阶段</button>
+      </div>
+      <div style="overflow:auto;margin-top:0.65rem">
+        <table>
+          <thead><tr><th>交付物</th><th>类型</th><th>模板</th><th>必需</th></tr></thead>
+          <tbody id="stageDefBody"></tbody>
+        </table>
+      </div>
+      <div class="row" style="margin-top:0.65rem">
+        <span class="pill" id="stageApprovalPill">审批：—</span>
+        <button type="button" class="secondary" id="btnCopyApproverJson">复制审批身份 JSON</button>
+      </div>
+      <div class="row" style="margin-top:0.35rem">
+        <span class="pill" id="stageEnvBudgetPill">环境/预算：—</span>
+        <span class="pill" id="stageConditionPill">条件：—</span>
+        <span class="pill" id="stageApproverReqPill">身份要求：—</span>
+      </div>
+      <div style="overflow:auto;margin-top:0.35rem">
+        <table>
+          <thead><tr><th>审批时间</th><th>决策</th><th>审批人</th><th>备注</th></tr></thead>
+          <tbody id="stageApprHistBody"></tbody>
+        </table>
+      </div>
+      <div style="overflow:auto;margin-top:0.35rem">
+        <table>
+          <thead><tr><th>参与角色</th><th>层级</th><th>职责</th></tr></thead>
+          <tbody id="stagePartBody"></tbody>
+        </table>
+      </div>
+      <label class="meta" style="display:block;margin-top:0.65rem">当前阶段交付物（JSON 数组，complete 时提交）</label>
+      <textarea id="stageDeliverablesJson" class="mono" style="min-height:120px;font-size:0.78rem;margin-top:0.25rem">[]</textarea>
+      <label class="meta" style="display:block;margin-top:0.65rem">单交付物上传名称（调用 <code>/deliverables/{deliverable_name}</code>）</label>
+      <input type="text" class="inline" id="stageDeliverableName" placeholder="例如：市场分析报告" style="max-width:420px;display:block;margin:0.35rem 0" />
+      <label class="meta" style="display:block;margin-top:0.25rem">单交付物 JSON（可包含 <code>type/template/schema/url/content_text</code>）</label>
+      <textarea id="stageDeliverableOneJson" class="mono" style="min-height:96px;font-size:0.78rem;margin-top:0.25rem">{}</textarea>
+      <button type="button" class="secondary" id="btnStageUploadOne" style="margin-top:0.35rem">上传单交付物</button>
+      <label class="meta" style="display:block;margin-top:0.4rem">阶段备注 / 审批意见</label>
+      <textarea id="stageComments" class="mono" style="min-height:72px;font-size:0.78rem;margin-top:0.25rem"></textarea>
+      <pre id="stageOut" class="mono" style="margin-top:0.5rem;max-height:240px;overflow:auto">—</pre>
+    </section>
     <section id="sec-statusflow">
       <h2>执行状态</h2>
       <p class="meta">在允许的状态迁移下使用 <code>PATCH /api/v1/projects/{id}/status</code>。</p>
@@ -310,6 +367,345 @@
       return walk("__root__");
     }
 
+    function stageCanStart(stage) {
+      return String(stage.status || "") === "pending";
+    }
+
+    function stageCanComplete(stage) {
+      return String(stage.status || "") === "in_progress";
+    }
+
+    function stageCanApprove(stage) {
+      const s = String(stage.status || "");
+      return s === "review" || s === "completed" || s === "in_progress";
+    }
+
+    function pickCurrentStage(stages) {
+      if (!Array.isArray(stages) || !stages.length) return null;
+      return (
+        stages.find(s => String(s.status || "") === "in_progress") ||
+        stages.find(s => String(s.status || "") === "review") ||
+        stages.find(s => String(s.status || "") === "pending") ||
+        stages.find(s => String(s.status || "") === "completed") ||
+        stages[0]
+      );
+    }
+
+    function stageSeedDeliverables(stage) {
+      const defs = Array.isArray(stage && stage.deliverables) ? stage.deliverables : [];
+      return defs
+        .filter(d => d && d.required !== false)
+        .map(d => ({
+          name: d.name || "未命名交付物",
+          type: d.type || "document",
+          content_text: ""
+        }));
+    }
+
+    function renderStageTable(stages) {
+      const tb = document.getElementById("stageBody");
+      tb.innerHTML = "";
+      if (!Array.isArray(stages) || !stages.length) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = "<td colspan=\"5\"><span class=\"meta\">暂无阶段数据</span></td>";
+        tb.appendChild(tr);
+        return;
+      }
+      stages.forEach(s => {
+        const tr = document.createElement("tr");
+        const owner = [s.owner_level, s.owner_role].filter(Boolean).join(" / ") || "—";
+        tr.innerHTML =
+          "<td><strong>" + escapeHtml(String(s.id || "—")) + "</strong> · " + escapeHtml(String(s.name || "—")) + "</td>" +
+          "<td>" + escapeHtml(String(s.phase || "—")) + "</td>" +
+          "<td><span class=\"pill\">" + escapeHtml(String(s.status || "—")) + "</span></td>" +
+          "<td>" + escapeHtml(owner) + "</td>" +
+          "<td><button type=\"button\" class=\"secondary\" data-stage-select=\"" + escapeHtml(String(s.id || "")) + "\">设为当前</button></td>";
+        tb.appendChild(tr);
+      });
+    }
+
+    function renderStageDefinitions(stage) {
+      const tb = document.getElementById("stageDefBody");
+      tb.innerHTML = "";
+      const defs = Array.isArray(stage && stage.deliverables) ? stage.deliverables : [];
+      if (!defs.length) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = "<td colspan=\"4\"><span class=\"meta\">当前阶段未定义交付物</span></td>";
+        tb.appendChild(tr);
+        return;
+      }
+      defs.forEach(d => {
+        const tr = document.createElement("tr");
+        tr.innerHTML =
+          "<td><strong>" + escapeHtml(String(d.name || "—")) + "</strong></td>" +
+          "<td>" + escapeHtml(String(d.type || "—")) + "</td>" +
+          "<td class=\"mono\">" + escapeHtml(String(d.template || "—")) + "</td>" +
+          "<td><span class=\"pill\">" + escapeHtml(d.required === false ? "可选" : "必需") + "</span></td>";
+        tb.appendChild(tr);
+      });
+    }
+
+    function renderStageParticipants(stage) {
+      const tb = document.getElementById("stagePartBody");
+      tb.innerHTML = "";
+      const parts = Array.isArray(stage && stage.participants) ? stage.participants : [];
+      if (!parts.length) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = "<td colspan=\"3\"><span class=\"meta\">未配置参与者</span></td>";
+        tb.appendChild(tr);
+        return;
+      }
+      parts.forEach(p => {
+        const tr = document.createElement("tr");
+        tr.innerHTML =
+          "<td><strong>" + escapeHtml(String(p.role || "—")) + "</strong></td>" +
+          "<td>" + escapeHtml(String(p.level || "—")) + "</td>" +
+          "<td>" + escapeHtml(String(p.responsibility || "—")) + "</td>";
+        tb.appendChild(tr);
+      });
+    }
+
+    function renderApprovalHistory(stage) {
+      const tb = document.getElementById("stageApprHistBody");
+      tb.innerHTML = "";
+      const items = Array.isArray(stage && stage.approval_history) ? stage.approval_history : [];
+      if (!items.length) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = "<td colspan=\"4\"><span class=\"meta\">暂无审批记录</span></td>";
+        tb.appendChild(tr);
+        return;
+      }
+      items.slice(-5).reverse().forEach(it => {
+        const tr = document.createElement("tr");
+        const who = [it.approver_level, it.approver_role].filter(Boolean).join(" / ") || "—";
+        const dec = it.approved === true ? "通过" : "驳回";
+        tr.innerHTML =
+          "<td class=\"mono\">" + escapeHtml(String(it.timestamp || "—")) + "</td>" +
+          "<td><span class=\"pill\">" + escapeHtml(dec) + "</span></td>" +
+          "<td>" + escapeHtml(who) + "</td>" +
+          "<td>" + escapeHtml(String(it.comments || "")) + "</td>";
+        tb.appendChild(tr);
+      });
+    }
+
+    function renderCurrentStage(stage) {
+      const pill = document.getElementById("stageCurrentPill");
+      const out = document.getElementById("stageOut");
+      const btnStart = document.getElementById("btnStageStartCurrent");
+      const btnComplete = document.getElementById("btnStageCompleteCurrent");
+      const btnApprove = document.getElementById("btnStageApproveCurrent");
+      const btnReject = document.getElementById("btnStageRejectCurrent");
+      if (!stage) {
+        pill.textContent = "当前阶段：—";
+        out.textContent = "—";
+        btnStart.disabled = true;
+        btnComplete.disabled = true;
+        btnApprove.disabled = true;
+        btnReject.disabled = true;
+        document.getElementById("stageApprovalPill").textContent = "审批：—";
+        document.getElementById("stageEnvBudgetPill").textContent = "环境/预算：—";
+        document.getElementById("stageConditionPill").textContent = "条件：—";
+        document.getElementById("stageApproverReqPill").textContent = "身份要求：—";
+        document.getElementById("stageApprHistBody").innerHTML = "<tr><td colspan=\"4\"><span class=\"meta\">暂无审批记录</span></td></tr>";
+        return;
+      }
+      pill.textContent =
+        "当前阶段：" +
+        String(stage.id || "—") +
+        " / " +
+        String(stage.name || "—") +
+        " / " +
+        String(stage.status || "—");
+      out.textContent = JSON.stringify(stage, null, 2);
+      btnStart.disabled = !stageCanStart(stage);
+      btnComplete.disabled = !stageCanComplete(stage);
+      btnApprove.disabled = !stageCanApprove(stage);
+      btnReject.disabled = !stageCanApprove(stage);
+      btnStart.setAttribute("data-stage-id", String(stage.id || ""));
+      btnComplete.setAttribute("data-stage-id", String(stage.id || ""));
+      btnApprove.setAttribute("data-stage-id", String(stage.id || ""));
+      btnReject.setAttribute("data-stage-id", String(stage.id || ""));
+      try {
+        document.getElementById("stageDeliverablesJson").value = JSON.stringify(
+          (stage.actual_deliverables && stage.actual_deliverables.length ? stage.actual_deliverables : stageSeedDeliverables(stage)),
+          null,
+          2
+        );
+      } catch (_) {
+        document.getElementById("stageDeliverablesJson").value = "[]";
+      }
+      renderStageDefinitions(stage);
+      renderStageParticipants(stage);
+      renderApprovalHistory(stage);
+      const ap = stage.approval || {};
+      const ar = ap.approver_role ? String(ap.approver_role) : "—";
+      const al = ap.approver_level ? String(ap.approver_level) : "";
+      const req = ap.required === false ? "不需审批" : "需审批";
+      const th = ap.timeout_hours != null ? String(ap.timeout_hours) + "h" : "—";
+      const cond = ap.condition ? " · 条件: " + String(ap.condition) : "";
+      const defap = ap.default_approver_role ? " · 默认: " + String(ap.default_approver_role) : "";
+      document.getElementById("stageApprovalPill").textContent =
+        "审批：" + req + " · 审批人 " + ar + (al ? "/" + al : "") + " · 超时 " + th + cond + defap;
+      const env = (window.__projectEnv || "dev") + "";
+      const budget = window.__projectBudget != null ? String(window.__projectBudget) : "—";
+      document.getElementById("stageEnvBudgetPill").textContent = "环境/预算：" + env + " / " + budget;
+      const condTxt = ap.condition ? String(ap.condition) : "—";
+      let condHit = "—";
+      if (ap.condition && window.__projectBudget != null) {
+        const c = String(ap.condition).trim().toLowerCase();
+        const b = Number(window.__projectBudget) || 0;
+        const m = c.match(/^budget\\s*(>=|<=|>|<)\\s*(\\d+)\\s*$/);
+        if (m) {
+          const op = m[1], thv = Number(m[2]) || 0;
+          const ok =
+            op === ">" ? b > thv :
+            op === ">=" ? b >= thv :
+            op === "<" ? b < thv :
+            op === "<=" ? b <= thv : false;
+          condHit = ok ? "触发" : "未触发";
+        }
+      }
+      document.getElementById("stageConditionPill").textContent = "条件：" + condTxt + " · " + condHit;
+      document.getElementById("stageApproverReqPill").textContent =
+        (env === "staging" || env === "prod") ? "身份要求：staging/prod 必填" : "身份要求：dev 可选";
+      const firstDef = Array.isArray(stage.deliverables) && stage.deliverables.length ? stage.deliverables[0] : null;
+      document.getElementById("stageDeliverableName").value = firstDef && firstDef.name ? String(firstDef.name) : "";
+      try {
+        document.getElementById("stageDeliverableOneJson").value = JSON.stringify(
+          firstDef
+            ? {
+                type: firstDef.type || "document",
+                template: firstDef.template || null,
+                schema: firstDef.schema || null,
+                content_text: ""
+              }
+            : {},
+          null,
+          2
+        );
+      } catch (_) {
+        document.getElementById("stageDeliverableOneJson").value = "{}";
+      }
+      document.getElementById("stageComments").value = stage.comments != null ? String(stage.comments) : "";
+    }
+
+    async function loadStages() {
+      if (!PROJECT_ID) return [];
+      const r = await jyisApiFetch(API + "/projects/" + encodeURIComponent(PROJECT_ID) + "/stages");
+      if (!r.ok) throw new Error("阶段加载失败 " + r.status + " " + (await r.text()).slice(0, 240));
+      const stages = await r.json();
+      window.__projectStages = Array.isArray(stages) ? stages : [];
+      if (!window.__currentStageId) {
+        const cur = pickCurrentStage(window.__projectStages);
+        window.__currentStageId = cur ? String(cur.id || "") : "";
+      }
+      renderStageTable(window.__projectStages);
+      const current =
+        window.__projectStages.find(s => String(s.id || "") === String(window.__currentStageId || "")) ||
+        pickCurrentStage(window.__projectStages);
+      if (current) window.__currentStageId = String(current.id || "");
+      renderCurrentStage(current);
+      return window.__projectStages;
+    }
+
+    async function runStageAction(kind) {
+      if (!PROJECT_ID) return;
+      const stageId = String(
+        document.getElementById(
+          kind === "start" ? "btnStageStartCurrent" : kind === "complete" ? "btnStageCompleteCurrent" : kind === "approve" ? "btnStageApproveCurrent" : "btnStageRejectCurrent"
+        ).getAttribute("data-stage-id") || ""
+      );
+      if (!stageId) return;
+      const comments = document.getElementById("stageComments").value;
+      const out = document.getElementById("stageOut");
+      out.textContent = "请求中…";
+      let url = API + "/projects/" + encodeURIComponent(PROJECT_ID) + "/stages/" + encodeURIComponent(stageId);
+      let body = null;
+      if (kind === "start") {
+        url += "/start";
+      } else if (kind === "complete") {
+        let deliverables;
+        try {
+          deliverables = JSON.parse(document.getElementById("stageDeliverablesJson").value);
+        } catch (e) {
+          alert("交付物 JSON 解析失败：" + e);
+          return;
+        }
+        if (!Array.isArray(deliverables)) {
+          alert("交付物必须是 JSON 数组");
+          return;
+        }
+        url += "/complete";
+        body = { deliverables, comments };
+      } else {
+        url += "/approve";
+        // best-effort: include approver identity for server-side validation
+        let ar = null, al = null;
+        try {
+          const stages = Array.isArray(window.__projectStages) ? window.__projectStages : [];
+          const cur = stages.find(s => String(s.id || "") === String(stageId));
+          const ap = cur && cur.approval ? cur.approval : {};
+          ar = ap && ap.approver_role ? String(ap.approver_role) : null;
+          al = ap && ap.approver_level ? String(ap.approver_level) : null;
+        } catch (_) {}
+        body = { approved: kind === "approve", comments, approver_role: ar, approver_level: al };
+      }
+      const r = await jyisApiFetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      const txt = await r.text();
+      out.textContent = txt;
+      if (!r.ok) {
+        alert("阶段操作失败 " + r.status + " " + txt.slice(0, 240));
+        return;
+      }
+      await loadStages();
+      await loadAll();
+    }
+
+    async function uploadSingleStageDeliverable() {
+      if (!PROJECT_ID) return;
+      const stageId = String(document.getElementById("btnStageCompleteCurrent").getAttribute("data-stage-id") || "");
+      if (!stageId) return;
+      const deliverableName = document.getElementById("stageDeliverableName").value.trim();
+      if (!deliverableName) {
+        alert("请填写交付物名称");
+        return;
+      }
+      let payload;
+      try {
+        payload = JSON.parse(document.getElementById("stageDeliverableOneJson").value);
+      } catch (e) {
+        alert("单交付物 JSON 解析失败：" + e);
+        return;
+      }
+      const out = document.getElementById("stageOut");
+      out.textContent = "请求中…";
+      const r = await jyisApiFetch(
+        API +
+          "/projects/" +
+          encodeURIComponent(PROJECT_ID) +
+          "/stages/" +
+          encodeURIComponent(stageId) +
+          "/deliverables/" +
+          encodeURIComponent(deliverableName),
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload || {}),
+        }
+      );
+      const txt = await r.text();
+      out.textContent = txt;
+      if (!r.ok) {
+        alert("单交付物上传失败 " + r.status + " " + txt.slice(0, 240));
+        return;
+      }
+      await loadStages();
+    }
+
     function renderTasks(nodes, ul) {
       nodes.forEach(({ t, ch }) => {
         const li = document.createElement("li");
@@ -354,13 +750,16 @@
       document.getElementById("title").textContent = proj.name || "项目详情";
       document.getElementById("proj").textContent = JSON.stringify(proj, null, 2);
       renderApprovalPanel(proj);
+      window.__projectEnv = proj.environment || "dev";
+      window.__projectBudget = proj.budget != null ? proj.budget : null;
 
-      const [pr, gg, tk, dc, tm] = await Promise.all([
+      const [pr, gg, tk, dc, tm, stages] = await Promise.all([
         jyisApiFetch(API + "/projects/" + encodeURIComponent(PROJECT_ID) + "/progress").then(r => r.json()),
         jyisApiFetch(API + "/projects/" + encodeURIComponent(PROJECT_ID) + "/gantt").then(r => r.json()),
         jyisApiFetch(API + "/tasks?project_id=" + encodeURIComponent(PROJECT_ID) + "&limit=500").then(r => r.json()),
         jyisApiFetch(API + "/projects/" + encodeURIComponent(PROJECT_ID) + "/discussion").then(r => r.json()),
         jyisApiFetch(API + "/projects/" + encodeURIComponent(PROJECT_ID) + "/team").then(r => r.json()),
+        jyisApiFetch(API + "/projects/" + encodeURIComponent(PROJECT_ID) + "/stages").then(r => r.json()),
       ]);
 
       document.getElementById("pOverall").textContent = "总进度 " + (pr.overall_progress ?? "—") + "%";
@@ -413,6 +812,13 @@
       }
 
       document.getElementById("retroBody").value = proj.retrospective_report != null ? String(proj.retrospective_report) : "";
+      window.__projectStages = Array.isArray(stages) ? stages : [];
+      const picked =
+        window.__projectStages.find(s => String(s.id || "") === String(window.__currentStageId || "")) ||
+        pickCurrentStage(window.__projectStages);
+      window.__currentStageId = picked ? String(picked.id || "") : "";
+      renderStageTable(window.__projectStages);
+      renderCurrentStage(picked);
 
       const treeEl = document.getElementById("taskTree");
       treeEl.textContent = "";
@@ -494,6 +900,42 @@
     document.getElementById("btnApply").addEventListener("click", () => doApply(false));
     document.getElementById("btnDry").addEventListener("click", () => doApply(true));
     document.getElementById("btnDisc").addEventListener("click", postDisc);
+    document.getElementById("btnStageRefresh").addEventListener("click", loadStages);
+    document.getElementById("btnStageStartCurrent").addEventListener("click", () => runStageAction("start"));
+    document.getElementById("btnStageCompleteCurrent").addEventListener("click", () => runStageAction("complete"));
+    document.getElementById("btnStageApproveCurrent").addEventListener("click", () => runStageAction("approve"));
+    document.getElementById("btnStageRejectCurrent").addEventListener("click", () => runStageAction("reject"));
+    document.getElementById("btnStageUploadOne").addEventListener("click", uploadSingleStageDeliverable);
+    document.getElementById("btnCopyApproverJson").addEventListener("click", async () => {
+      const stageId = String(document.getElementById("btnStageApproveCurrent").getAttribute("data-stage-id") || "");
+      const stages = Array.isArray(window.__projectStages) ? window.__projectStages : [];
+      const cur = stages.find(s => String(s.id || "") === String(stageId));
+      const ap = cur && cur.approval ? cur.approval : {};
+      const payload = {
+        approver_role: ap && ap.approver_role ? String(ap.approver_role) : null,
+        approver_level: ap && ap.approver_level ? String(ap.approver_level) : null,
+      };
+      const txt = JSON.stringify(payload, null, 2);
+      try {
+        if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(txt);
+          alert("已复制审批身份 JSON");
+        } else {
+          window.prompt("复制以下内容：", txt);
+        }
+      } catch (_) {
+        window.prompt("复制以下内容：", txt);
+      }
+    });
+    document.getElementById("sec-stages").addEventListener("click", ev => {
+      const btn = ev.target && ev.target.closest ? ev.target.closest("[data-stage-select]") : null;
+      if (!(btn instanceof HTMLElement)) return;
+      const stageId = btn.getAttribute("data-stage-select");
+      if (!stageId) return;
+      window.__currentStageId = stageId;
+      const stages = Array.isArray(window.__projectStages) ? window.__projectStages : [];
+      renderCurrentStage(stages.find(s => String(s.id || "") === stageId) || null);
+    });
 
     document.getElementById("btnSubmitAppr").addEventListener("click", async () => {
       if (!PROJECT_ID) return;
