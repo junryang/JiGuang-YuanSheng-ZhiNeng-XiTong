@@ -983,5 +983,8 @@
       - 见条目 106。
 
 106. 条目 105 同步远端记录（运维追溯）
-    - 本地提交：（待 commit 后回填）
-    - 推送结果：（待 push/重试后回填）
+    - 本地提交：
+      - `6723f62`（`feat(ops): add git sync silence state codes`）
+      - `6d82bb8`（`docs(handoff): append items 105-106 for silence state codes`）
+    - 推送结果：
+      - `git push origin main` 一次成功：`0b38756..6d82bb8  main -> main`
