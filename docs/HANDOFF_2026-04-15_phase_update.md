@@ -1130,3 +1130,26 @@
 
 118. 条目 116 待回填说明清理（运维追溯）
     - 本次功能推送（静默严重度等级颜色字段）对应的 `git push origin main` 结果已在条目 `117` 中明确记录。
+
+119. Git 同步摘要与运营风险报告补充静默状态颜色字段（完成后增强）
+    - 文件：`backend/app/api/routes.py`、`backend/tests/test_api_smoke.py`
+    - 接口字段（兼容追加，不破坏既有字段）：
+      - `GET /api/v1/ops/git-sync/summary` 新增：`sync_silence_state_color`（`string`，hex）
+      - `GET /api/v1/analytics/reports?report_type=ops_risk` 新增：`git_sync_event_silence_state_color`（`string`，hex）
+    - 统计口径：
+      - 显式“状态颜色”字段，语义上与 `*_silence_severity_level_color` 保持一致：
+        - `missing` → `#9CA3AF`
+        - `low` → `#22C55E`
+        - `medium` → `#FBBF24`
+        - `high` → `#EF4444`
+      - 实现为直接复用 `*_silence_severity_level_color`，保证一致性、避免重复映射。
+    - 测试覆盖：
+      - 最小回归：`python -m pytest tests/test_api_smoke.py -q --tb=short`
+      - 结果：`48 passed`
+      - 新增断言：字段存在且颜色值属于固定 hex 集合。
+    - 推送结果：
+      - 见条目 120。
+
+120. 条目 119 同步远端记录（运维追溯）
+    - 本地提交：（待回填）
+    - 推送结果：（待 push/重试后回填）
