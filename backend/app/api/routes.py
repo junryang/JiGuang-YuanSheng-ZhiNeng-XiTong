@@ -1625,6 +1625,12 @@ def git_sync_summary(
         if minutes_since_last_event is not None
         else None
     )
+    if minutes_since_last_event is None:
+        sync_silence_state = "missing"
+    elif sync_silence_warning:
+        sync_silence_state = "overdue"
+    else:
+        sync_silence_state = "within"
 
     return {
         "days": ndays,
@@ -1653,6 +1659,7 @@ def git_sync_summary(
         "sync_silence_overdue_minutes": sync_silence_overdue_minutes,
         "sync_silence_overdue_rate": sync_silence_overdue_rate,
         "sync_silence_headroom_minutes": sync_silence_headroom_minutes,
+        "sync_silence_state": sync_silence_state,
         "consecutive_failure_streak": consecutive_failure_streak,
         "consecutive_non_success_streak": consecutive_non_success_streak,
         "sync_health_level": sync_health_level,
@@ -1996,6 +2003,12 @@ def analytics_reports(
         if minutes_since_last_git_sync_event is not None
         else None
     )
+    if minutes_since_last_git_sync_event is None:
+        git_sync_event_silence_state = "missing"
+    elif git_sync_event_silence_warning:
+        git_sync_event_silence_state = "overdue"
+    else:
+        git_sync_event_silence_state = "within"
     return {
         "report_type": norm_type,
         "days": days,
@@ -2088,6 +2101,7 @@ def analytics_reports(
         "git_sync_event_silence_overdue_minutes": git_sync_event_silence_overdue_minutes,
         "git_sync_event_silence_overdue_rate": git_sync_event_silence_overdue_rate,
         "git_sync_event_silence_headroom_minutes": git_sync_event_silence_headroom_minutes,
+        "git_sync_event_silence_state": git_sync_event_silence_state,
         "last_git_sync_success_at": last_git_sync_success_at.isoformat() if last_git_sync_success_at else None,
         "minutes_since_last_git_sync_success": _minutes_since(last_git_sync_success_at, now),
         "last_git_sync_failure_at": last_git_sync_failure_at.isoformat() if last_git_sync_failure_at else None,
