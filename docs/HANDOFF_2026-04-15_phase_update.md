@@ -1071,3 +1071,26 @@
         - 第 3 次重试失败：`schannel: failed to receive handshake, SSL/TLS connection failed`
         - 第 4 次重试失败：`Recv failure: Connection was reset`
         - 第 5 次重试成功：`e2eb92d..929edce  main -> main`
+
+113. Git 同步摘要与运营风险报告补充静默严重度等级标签字段（完成后增强）
+    - 文件：`backend/app/api/routes.py`、`backend/tests/test_api_smoke.py`
+    - 接口字段（兼容追加，不破坏既有字段）：
+      - `GET /api/v1/ops/git-sync/summary` 新增：`sync_silence_severity_level_label`（`低|中|高|缺失`）
+      - `GET /api/v1/analytics/reports?report_type=ops_risk` 新增：`git_sync_event_silence_severity_level_label`（`低|中|高|缺失`）
+    - 统计口径：
+      - 与既有 `*_silence_severity_level` 一一对应：
+        - `low` → `低`
+        - `medium` → `中`
+        - `high` → `高`
+        - `missing` → `缺失`
+      - 目标：为前端展示、报表导出与交接视图提供直接可读的中文等级标签。
+    - 测试覆盖：
+      - 最小回归：`python -m pytest tests/test_api_smoke.py -q --tb=short`
+      - 结果：`48 passed in 143.85s`
+      - 新增断言：字段存在且中文标签枚举值合法。
+    - 推送结果：
+      - 见条目 114。
+
+114. 条目 113 同步远端记录（运维追溯）
+    - 本地提交：（待 commit 后回填）
+    - 推送结果：（待 push/重试后回填）
