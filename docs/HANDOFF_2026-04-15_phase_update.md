@@ -1288,4 +1288,5 @@
       - `cd backend && python -m pytest tests/ -q --tb=short`：`191 passed in 194.42s (exit_code=0)`
       - `cd backend && python -m pytest tests/test_policy_gate_matrix.py tests/test_api_smoke.py tests/test_marketing_api.py -q --tb=short`：`89 passed in 164.67s (exit_code=0)`
     - 推送结果：
-      - 待回填（本地提交并 push 后补齐失败原因与成功区间）
+      - 第 1 次推送失败：`Recv failure: Connection was reset`
+      - 第 2 次推送成功：`898491c..cb69f57  main -> main`
