@@ -770,3 +770,13 @@
       - 实际执行：一次定向回归报错（`NameError`，已修复），后续全量最小回归在当前环境出现长时间阻塞；中断后待下一轮复跑确认。
     - 推送结果：
       - 本条将在提交与推送完成后补充 SHA 与重试状态。
+
+90. 条目 89 同步远端记录（运维追溯）
+    - 本地提交：
+      - `192d1bf`（`feat(ops): expose git sync silence threshold minutes`）
+      - `2452cad`（`docs(handoff): append item 89 for silence threshold minutes`）
+    - 推送结果：
+      - `git push origin main` 一次成功，远端快进：`9abba91..2452cad`，未触发 TLS/网络重试。
+    - 最小回归补充说明：
+      - 本轮执行 `python -m pytest tests/test_api_smoke.py -q --tb=short` 时在当前环境出现阻塞，已中断并记录；
+      - 已通过定向回归定位并修复新增代码缺陷（`NameError`），下一轮将优先复跑最小回归并回填最终通过结果。
