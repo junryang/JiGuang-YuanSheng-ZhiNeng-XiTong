@@ -709,3 +709,6 @@
       - `GET /api/v1/ops/git-sync/summary` 新增：`audit_delivery_invalid_density_per_day`、`audit_delivery_empty_density_per_day`（分别 `invalid_count / days`、`empty_count / days`，`days` 为摘要参数 `days`，保留 2 位小数，与 `audit_delivery_success_density_per_day` 等口径一致）。
       - `GET /api/v1/analytics/reports?report_type=ops_risk` 新增：`git_sync_audit_delivery_invalid_density_per_day`、`git_sync_audit_delivery_empty_density_per_day`（分母 `max(1, days)`，与报告参数 `days` 对齐）。
       - 最小回归：`test_git_sync_summary_endpoint`、`test_analytics_reports_project_execution_and_ops_risk` 增加字段存在性与 `float` 类型断言。
+
+82. 条目 81 同步远端记录（运维追溯）
+    - 本地提交：`92204cf`（`feat(ops): audit_delivery invalid/empty density per day`），已推送至 `origin/main`。
