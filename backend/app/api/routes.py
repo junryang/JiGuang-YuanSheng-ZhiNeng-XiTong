@@ -1643,6 +1643,7 @@ def git_sync_summary(
         sync_silence_event_present = True
         sync_silence_state_label = "阈值内"
         sync_silence_state_code = "WITHIN"
+    sync_silence_severity_score = sync_silence_overdue_rate
 
     return {
         "days": ndays,
@@ -1676,6 +1677,7 @@ def git_sync_summary(
         "sync_silence_event_present": sync_silence_event_present,
         "sync_silence_state_label": sync_silence_state_label,
         "sync_silence_state_code": sync_silence_state_code,
+        "sync_silence_severity_score": sync_silence_severity_score,
         "consecutive_failure_streak": consecutive_failure_streak,
         "consecutive_non_success_streak": consecutive_non_success_streak,
         "sync_health_level": sync_health_level,
@@ -2037,6 +2039,7 @@ def analytics_reports(
         git_sync_event_silence_event_present = True
         git_sync_event_silence_state_label = "阈值内"
         git_sync_event_silence_state_code = "WITHIN"
+    git_sync_event_silence_severity_score = git_sync_event_silence_overdue_rate
     return {
         "report_type": norm_type,
         "days": days,
@@ -2134,6 +2137,7 @@ def analytics_reports(
         "git_sync_event_silence_event_present": git_sync_event_silence_event_present,
         "git_sync_event_silence_state_label": git_sync_event_silence_state_label,
         "git_sync_event_silence_state_code": git_sync_event_silence_state_code,
+        "git_sync_event_silence_severity_score": git_sync_event_silence_severity_score,
         "last_git_sync_success_at": last_git_sync_success_at.isoformat() if last_git_sync_success_at else None,
         "minutes_since_last_git_sync_success": _minutes_since(last_git_sync_success_at, now),
         "last_git_sync_failure_at": last_git_sync_failure_at.isoformat() if last_git_sync_failure_at else None,
