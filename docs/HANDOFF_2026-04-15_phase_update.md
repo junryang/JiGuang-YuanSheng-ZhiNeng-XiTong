@@ -1270,3 +1270,22 @@
       - 全量回归统计 `tests/` 下所有用例的通过数，用于发布前 Go/No-Go 的“稳定性证明”
     - 推送结果：
       - 第 1 次推送成功：`ba4fb4d..59761da  main -> main`
+
+129. Day4/Day5 发布前收口产物与 Go/No-Go 决策落地（文档交付）
+    - 文件：
+      - `docs/D3_RELEASE_REHEARSAL_RECORD_20260416_r1.md`
+      - `docs/D5_GO_NO_GO_REVIEW_MEMO_20260416_r1.md`
+      - `docs/D5_RELEASE_DUTY_SCHEDULE_20260416_r1.md`
+      - `docs/DAY3_SECURITY_APPROVAL_SAMPLING_REPORT_v1.0.md`（更新统计口径）
+      - `docs/DAY3_POLICY_GATE_REGRESSION_REPORT_v1.0.md`、`docs/DAY3_POLICY_GATE_EXEC_SUMMARY_v1.0.md`（更新门禁回归统计口径）
+    - 接口字段：本轮为发布门禁/演练/决策文档，无新增运行时 API 字段（接口契约以既有回归验证为准）。
+    - 统计口径/映射规则（仅文档引用）：
+      - `day3_gate`：只跑标记为 `day3_gate` 的 Day3 策略门禁矩阵/一致性用例
+      - 全量回归：跑 `tests/` 下所有用例，用于发布前稳定性证明
+      - 安全抽测：引用 `test_security_high_risk_approval_sampling_matrix` 的抽测用例集合与拒绝码机读断言
+    - 测试结果（证据汇总）：
+      - `cd backend && python -m pytest -m day3_gate -q --tb=short`：`33 passed, 158 deselected`
+      - `cd backend && python -m pytest tests/ -q --tb=short`：`191 passed in 194.42s (exit_code=0)`
+      - `cd backend && python -m pytest tests/test_policy_gate_matrix.py tests/test_api_smoke.py tests/test_marketing_api.py -q --tb=short`：`89 passed in 164.67s (exit_code=0)`
+    - 推送结果：
+      - 待回填（本地提交并 push 后补齐失败原因与成功区间）
