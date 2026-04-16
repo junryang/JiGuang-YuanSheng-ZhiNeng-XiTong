@@ -780,3 +780,18 @@
     - 最小回归补充说明：
       - 本轮执行 `python -m pytest tests/test_api_smoke.py -q --tb=short` 时在当前环境出现阻塞，已中断并记录；
       - 已通过定向回归定位并修复新增代码缺陷（`NameError`），下一轮将优先复跑最小回归并回填最终通过结果。
+
+91. Git 同步摘要与运营风险报告补充静默超阈值分钟数字段（完成后增强）
+    - 文件：`backend/app/api/routes.py`、`backend/tests/test_api_smoke.py`
+    - 接口字段（兼容追加，不破坏既有字段）：
+      - `GET /api/v1/ops/git-sync/summary` 新增：`sync_silence_overdue_minutes`（`float|null`）
+      - `GET /api/v1/analytics/reports?report_type=ops_risk` 新增：`git_sync_event_silence_overdue_minutes`（`float|null`）
+    - 统计口径：
+      - 统一为 `max(0, minutes_since_last_event - silence_threshold_minutes)`，保留 1 位小数；
+      - 当最近事件不存在（`minutes_since_last_event=null`）时，该字段返回 `null`，保持语义清晰。
+    - 测试覆盖：
+      - 最小回归：`python -m pytest tests/test_api_smoke.py -q --tb=short`
+      - 结果：`48 passed in 133.69s`
+      - 新增断言：字段存在且在当前样例下类型为 `float`。
+    - 推送结果：
+      - 本条将在提交并推送完成后补充 SHA 与重试状态。
