@@ -1012,3 +1012,26 @@
       - `6931ef2`（`docs(handoff): append items 107-108 for silence severity scores`）
     - 推送结果：
       - `git push origin main` 一次成功：`d3ef134..6931ef2  main -> main`
+
+109. Git 同步摘要与运营风险报告补充静默严重度等级字段（完成后增强）
+    - 文件：`backend/app/api/routes.py`、`backend/tests/test_api_smoke.py`
+    - 接口字段（兼容追加，不破坏既有字段）：
+      - `GET /api/v1/ops/git-sync/summary` 新增：`sync_silence_severity_level`（`low|medium|high|missing`）
+      - `GET /api/v1/analytics/reports?report_type=ops_risk` 新增：`git_sync_event_silence_severity_level`（`low|medium|high|missing`）
+    - 统计口径：
+      - 基于既有 `*_silence_severity_score` 分层：
+        - `missing`: 分数为 `null`
+        - `high`: 分数 `>= 100.0`
+        - `medium`: 分数 `> 0.0 且 < 100.0`
+        - `low`: 分数 `= 0.0`
+      - 目标：为看板着色、筛选器和规则引擎提供稳定离散等级。
+    - 测试覆盖：
+      - 最小回归：`python -m pytest tests/test_api_smoke.py -q --tb=short`
+      - 结果：`48 passed in 142.90s`
+      - 新增断言：字段存在且枚举值合法。
+    - 推送结果：
+      - 见条目 110。
+
+110. 条目 109 同步远端记录（运维追溯）
+    - 本地提交：（待 commit 后回填）
+    - 推送结果：（待 push/重试后回填）
