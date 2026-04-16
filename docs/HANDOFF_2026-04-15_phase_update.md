@@ -877,5 +877,11 @@
       - 见条目 98。
 
 98. 条目 97 同步远端记录（运维追溯）
-    - 本地提交：（待 commit 后回填）
-    - 推送结果：（待 push/重试后回填）
+    - 本地提交：
+      - `907f2a1`（`feat(ops): add git sync silence state enum`）
+      - `e5b7206`（`docs(handoff): append items 97-98 for silence state enums`）
+    - 推送结果：
+      - 首次 `git push origin main` 失败：`Could not resolve host: github.com`
+      - 第 2 次重试成功：`d8f8dd9..e5b7206  main -> main`
+    - 处置结论：
+      - 属于瞬时 DNS/网络波动，代码与文档已成功推送到远端 `main`。
