@@ -1552,6 +1552,7 @@ def git_sync_summary(
     audit_delivery_empty_rate = (
         round((audit_delivery_empty_count / totals["total"]) * 100, 1) if totals["total"] > 0 else 0.0
     )
+    audit_delivery_untagged_density_per_day = round(audit_delivery_untagged_count / ndays, 2)
     top_branches = sorted(
         [{"branch": b, **stats} for b, stats in branch_totals.items()],
         key=lambda x: (-x["total"], x["branch"]),
@@ -1656,6 +1657,7 @@ def git_sync_summary(
         "audit_delivery_coverage_rate": audit_delivery_coverage_rate,
         "audit_delivery_untagged_count": audit_delivery_untagged_count,
         "audit_delivery_untagged_rate": audit_delivery_untagged_rate,
+        "audit_delivery_untagged_density_per_day": audit_delivery_untagged_density_per_day,
         "audit_delivery_invalid_count": audit_delivery_invalid_count,
         "audit_delivery_invalid_rate": audit_delivery_invalid_rate,
         "last_audit_delivery_invalid_at": (
@@ -1884,6 +1886,9 @@ def analytics_reports(
     git_sync_audit_delivery_empty_rate = (
         round((git_audit_delivery_empty / git_total) * 100, 1) if git_total > 0 else 0.0
     )
+    git_sync_audit_delivery_untagged_density_per_day = round(
+        git_sync_audit_delivery_untagged_count / max(1, int(days)), 2
+    )
     git_net_success_rate = round(((git_success - git_failure) / git_total) * 100, 1) if git_total > 0 else 0.0
     git_event_density_per_day = round(git_total / max(1, int(days)), 2)
     git_success_density_per_day = round(git_success / max(1, int(days)), 2)
@@ -1961,6 +1966,7 @@ def analytics_reports(
         "git_sync_audit_delivery_coverage_rate": git_sync_audit_delivery_coverage_rate,
         "git_sync_audit_delivery_untagged_count": git_sync_audit_delivery_untagged_count,
         "git_sync_audit_delivery_untagged_rate": git_sync_audit_delivery_untagged_rate,
+        "git_sync_audit_delivery_untagged_density_per_day": git_sync_audit_delivery_untagged_density_per_day,
         "git_sync_audit_delivery_invalid_count": git_audit_delivery_invalid,
         "git_sync_audit_delivery_invalid_rate": git_sync_audit_delivery_invalid_rate,
         "last_git_sync_audit_delivery_invalid_at": (
