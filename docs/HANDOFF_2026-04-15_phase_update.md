@@ -722,3 +722,11 @@
 
 84. 条目 83 同步远端记录（运维追溯）
     - 本地提交：`76dbd55`（`feat(ops): audit_delivery untagged density per day`），已推送至 `origin/main`（首轮 `git push` 曾遇 `schannel: server closed abruptly` / `Recv failure: Connection was reset`，重试后成功）。
+
+85. Git 摘要与运营风险报告补充审计投递未标记最近时钟（完成后增强）
+    - 文件：`backend/app/api/routes.py`、`backend/tests/test_api_smoke.py`
+    - 变更：
+      - `GET /api/v1/ops/git-sync/summary` 新增：`last_audit_delivery_untagged_at`、`minutes_since_last_audit_delivery_untagged`。
+      - `GET /api/v1/analytics/reports?report_type=ops_risk` 新增：`last_git_sync_audit_delivery_untagged_at`、`minutes_since_last_git_sync_audit_delivery_untagged`。
+      - 口径：基于非法标记与空标记最近时钟取并集最近值（`max(last_invalid_at, last_empty_at)`）；若其中一类不存在，则回退到另一类；两类均不存在则为 `null`。
+      - 最小回归：补充字段存在性与 `str`/`float` 类型断言。

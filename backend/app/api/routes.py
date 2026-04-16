@@ -1382,6 +1382,7 @@ def git_sync_summary(
     last_audit_delivery_failed_at: datetime | None = None
     last_audit_delivery_invalid_at: datetime | None = None
     last_audit_delivery_empty_at: datetime | None = None
+    last_audit_delivery_untagged_at: datetime | None = None
     last_success_at: datetime | None = None
     last_failure_at: datetime | None = None
     last_skipped_at: datetime | None = None
@@ -1553,6 +1554,10 @@ def git_sync_summary(
         round((audit_delivery_empty_count / totals["total"]) * 100, 1) if totals["total"] > 0 else 0.0
     )
     audit_delivery_untagged_density_per_day = round(audit_delivery_untagged_count / ndays, 2)
+    if last_audit_delivery_invalid_at and last_audit_delivery_empty_at:
+        last_audit_delivery_untagged_at = max(last_audit_delivery_invalid_at, last_audit_delivery_empty_at)
+    else:
+        last_audit_delivery_untagged_at = last_audit_delivery_invalid_at or last_audit_delivery_empty_at
     top_branches = sorted(
         [{"branch": b, **stats} for b, stats in branch_totals.items()],
         key=lambda x: (-x["total"], x["branch"]),
@@ -1670,6 +1675,10 @@ def git_sync_summary(
             last_audit_delivery_empty_at.isoformat() if last_audit_delivery_empty_at else None
         ),
         "minutes_since_last_audit_delivery_empty": _minutes_since(last_audit_delivery_empty_at, now_hour),
+        "last_audit_delivery_untagged_at": (
+            last_audit_delivery_untagged_at.isoformat() if last_audit_delivery_untagged_at else None
+        ),
+        "minutes_since_last_audit_delivery_untagged": _minutes_since(last_audit_delivery_untagged_at, now_hour),
         "last_audit_delivery_success_at": (
             last_audit_delivery_success_at.isoformat() if last_audit_delivery_success_at else None
         ),
@@ -1777,6 +1786,7 @@ def analytics_reports(
     git_audit_delivery_empty = 0
     last_git_sync_audit_delivery_invalid_at = None
     last_git_sync_audit_delivery_empty_at = None
+    last_git_sync_audit_delivery_untagged_at = None
     for e in git_events:
         context = e.get("context") or {}
         st = str(context.get("status", "")).strip().lower()
@@ -1889,6 +1899,14 @@ def analytics_reports(
     git_sync_audit_delivery_untagged_density_per_day = round(
         git_sync_audit_delivery_untagged_count / max(1, int(days)), 2
     )
+    if last_git_sync_audit_delivery_invalid_at and last_git_sync_audit_delivery_empty_at:
+        last_git_sync_audit_delivery_untagged_at = max(
+            last_git_sync_audit_delivery_invalid_at, last_git_sync_audit_delivery_empty_at
+        )
+    else:
+        last_git_sync_audit_delivery_untagged_at = (
+            last_git_sync_audit_delivery_invalid_at or last_git_sync_audit_delivery_empty_at
+        )
     git_net_success_rate = round(((git_success - git_failure) / git_total) * 100, 1) if git_total > 0 else 0.0
     git_event_density_per_day = round(git_total / max(1, int(days)), 2)
     git_success_density_per_day = round(git_success / max(1, int(days)), 2)
@@ -1986,6 +2004,14 @@ def analytics_reports(
         ),
         "minutes_since_last_git_sync_audit_delivery_empty": _minutes_since(
             last_git_sync_audit_delivery_empty_at, now
+        ),
+        "last_git_sync_audit_delivery_untagged_at": (
+            last_git_sync_audit_delivery_untagged_at.isoformat()
+            if last_git_sync_audit_delivery_untagged_at
+            else None
+        ),
+        "minutes_since_last_git_sync_audit_delivery_untagged": _minutes_since(
+            last_git_sync_audit_delivery_untagged_at, now
         ),
         "git_sync_net_success_rate": git_net_success_rate,
         "git_sync_failure_pressure_index": git_sync_failure_pressure_index,
