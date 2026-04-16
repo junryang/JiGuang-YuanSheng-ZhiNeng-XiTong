@@ -90,6 +90,25 @@ def _minutes_since(value: datetime | None, now: datetime) -> float | None:
     return round(delta.total_seconds() / 60.0, 1)
 
 
+def _hex_to_rgb_triplet(hex_color: str | None) -> str | None:
+    """
+    Convert '#RRGGBB' hex color to 'r,g,b' triplet.
+    Returns None when input is missing or invalid.
+    """
+    if not hex_color:
+        return None
+    text = str(hex_color).strip()
+    if not text.startswith("#") or len(text) != 7:
+        return None
+    try:
+        r = int(text[1:3], 16)
+        g = int(text[3:5], 16)
+        b = int(text[5:7], 16)
+    except ValueError:
+        return None
+    return f"{r},{g},{b}"
+
+
 def _extract_push_attempts(context: dict[str, Any]) -> int | None:
     for key in ("push_attempts", "push_retry_count", "retry_count"):
         raw = context.get(key)
@@ -1668,6 +1687,7 @@ def git_sync_summary(
         sync_silence_severity_level_label = "低"
         sync_silence_severity_level_color = "#22C55E"
         sync_silence_severity_level_code = "LOW"
+    sync_silence_severity_level_color_rgb = _hex_to_rgb_triplet(sync_silence_severity_level_color)
 
     return {
         "days": ndays,
@@ -1706,6 +1726,7 @@ def git_sync_summary(
         "sync_silence_severity_level_rank": sync_silence_severity_level_rank,
         "sync_silence_severity_level_label": sync_silence_severity_level_label,
         "sync_silence_severity_level_color": sync_silence_severity_level_color,
+        "sync_silence_severity_level_color_rgb": sync_silence_severity_level_color_rgb,
         "sync_silence_severity_level_code": sync_silence_severity_level_code,
         # UI state quick-color mapping: reuse severity color to keep semantics consistent.
         "sync_silence_state_color": sync_silence_severity_level_color,
@@ -2095,6 +2116,7 @@ def analytics_reports(
         git_sync_event_silence_severity_level_label = "低"
         git_sync_event_silence_severity_level_color = "#22C55E"
         git_sync_event_silence_severity_level_code = "LOW"
+    git_sync_event_silence_severity_level_color_rgb = _hex_to_rgb_triplet(git_sync_event_silence_severity_level_color)
     return {
         "report_type": norm_type,
         "days": days,
@@ -2197,6 +2219,7 @@ def analytics_reports(
         "git_sync_event_silence_severity_level_rank": git_sync_event_silence_severity_level_rank,
         "git_sync_event_silence_severity_level_label": git_sync_event_silence_severity_level_label,
         "git_sync_event_silence_severity_level_color": git_sync_event_silence_severity_level_color,
+        "git_sync_event_silence_severity_level_color_rgb": git_sync_event_silence_severity_level_color_rgb,
         "git_sync_event_silence_severity_level_code": git_sync_event_silence_severity_level_code,
         # UI state quick-color mapping: reuse severity color to keep semantics consistent.
         "git_sync_event_silence_state_color": git_sync_event_silence_severity_level_color,

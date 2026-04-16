@@ -396,6 +396,10 @@ def test_git_sync_summary_endpoint():
     assert body["sync_silence_severity_level_code"] in {"MISSING", "LOW", "MEDIUM", "HIGH"}
     assert "sync_silence_severity_level_color" in body
     assert body["sync_silence_severity_level_color"] in {"#9CA3AF", "#EF4444", "#FBBF24", "#22C55E"}
+    assert "sync_silence_severity_level_color_rgb" in body
+    _rgb_parts = body["sync_silence_severity_level_color_rgb"].split(",")
+    assert len(_rgb_parts) == 3
+    assert all(p.isdigit() for p in _rgb_parts)
     assert "sync_silence_state_color" in body
     assert body["sync_silence_state_color"] in {"#9CA3AF", "#EF4444", "#FBBF24", "#22C55E"}
     assert isinstance(body["consecutive_failure_streak"], int)
@@ -800,6 +804,10 @@ def test_analytics_reports_project_execution_and_ops_risk():
     assert opsb["git_sync_event_silence_severity_level_code"] in {"MISSING", "LOW", "MEDIUM", "HIGH"}
     assert "git_sync_event_silence_severity_level_color" in opsb
     assert opsb["git_sync_event_silence_severity_level_color"] in {"#9CA3AF", "#EF4444", "#FBBF24", "#22C55E"}
+    assert "git_sync_event_silence_severity_level_color_rgb" in opsb
+    _rgb_parts = opsb["git_sync_event_silence_severity_level_color_rgb"].split(",")
+    assert len(_rgb_parts) == 3
+    assert all(p.isdigit() for p in _rgb_parts)
     assert "git_sync_event_silence_state_color" in opsb
     assert opsb["git_sync_event_silence_state_color"] in {"#9CA3AF", "#EF4444", "#FBBF24", "#22C55E"}
     assert isinstance(opsb["last_git_sync_success_at"], str)
