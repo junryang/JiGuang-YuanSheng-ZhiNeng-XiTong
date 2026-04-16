@@ -1226,3 +1226,30 @@
     - 推送结果：
       - 代码提交：`512dce7..527a433  main -> main`
       - 文档推送：第 1 次失败：`Could not resolve host: github.com`；第 2 次成功：`527a433..d39b533  main -> main`
+
+127. Git 同步摘要与运营风险报告字段契约回归确认（最小回归）
+    - 文件：`backend/app/api/routes.py`、`backend/tests/test_api_smoke.py`
+    - 接口字段（兼容追加且全量返回；字段名/类型与测试一致）：
+      - `GET /api/v1/ops/git-sync/summary`：
+        - 健康/静默：`sync_silence_warning`(bool)、`sync_silence_overdue_minutes`(float|null)、`sync_silence_overdue_rate`(float|null)、`sync_silence_headroom_minutes`(float|null)
+        - 状态/等级枚举与分层：`sync_silence_state`/`sync_silence_state_rank`/`sync_silence_state_label`/`sync_silence_state_code`、`sync_silence_severity_level`/`sync_silence_severity_level_rank`/`sync_silence_severity_level_label`/`sync_silence_severity_level_code`
+        - 颜色字段：`sync_silence_severity_level_color`(hex)、`sync_silence_severity_level_color_rgb`(`r,g,b`)、以及 `sync_silence_state_color`（复用颜色）
+        - 连续风险与健康：`consecutive_failure_streak`(int)、`consecutive_non_success_streak`(int)、`sync_health_level`/`sync_health_warning`
+        - 审计投递维度：`audit_delivery_*_count`(int)、`audit_delivery_*_rate`(float)、`audit_delivery_health_level`/`audit_delivery_*_pressure_index`/`audit_delivery_net_health_score`、以及 invalid/empty 对应 last/分钟字段
+      - `GET /api/v1/analytics/reports?report_type=ops_risk`：
+        - 主链路计数与比例：`git_sync_success_count`/`git_sync_failure_count`/`git_sync_skipped_count` 与 `git_sync_*_rate`(float)
+        - 审计投递健康与密度：`git_sync_audit_delivery_failed_count`/`success_count`、`git_sync_audit_delivery_failure_rate`/`success_rate`、`git_sync_audit_delivery_health_level`/`warning`、以及各类 `git_sync_audit_delivery_*_density_per_day`
+        - 失败主因：`git_sync_top_failure_reason_code`/`count`/`rate`
+        - 事件静默与分层：`git_sync_event_silence_threshold_minutes`、`git_sync_event_silence_warning`、`git_sync_event_silence_overdue_minutes`/`overdue_rate`/`headroom_minutes`、`git_sync_event_silence_state*`、`git_sync_event_silence_severity_*`（含颜色字段 rgb）
+        - 连续失败与健康：`git_sync_consecutive_failure_streak`/`git_sync_consecutive_non_success_streak`、`git_sync_health_level`/`warning`、`ops_risk_level`
+    - 统计口径/映射规则（与当前实现保持一致）：
+      - `git-sync/summary` 静默阈值：`sync_silence_threshold_minutes = days*24*60`；`sync_silence_warning` 在 `minutes_since_last_event` 为 `null` 或 `> threshold` 时为 true；`overdue_minutes = max(0, minutes_since_last_event - threshold)`（返回 float 或 null）。
+      - `sync_silence_state`：`missing`（无事件，rank=2）/`within`（rank=0）/`overdue`（rank=1），并派生 label/code；severity 以 `sync_silence_overdue_rate` 分层（missing/low/medium/high），hex->rgb 提供 `r,g,b` 字符串。
+      - 健康等级：基于连续指标（`failure_streak>=3` 或 `non_success_streak>=5` => high_risk；`>=1/>=2` => warning；否则 healthy）。
+      - 审计投递分解：`context.audit_delivery=success|failed` 计入 success/failed；非空但非枚举计入 invalid；缺失/空计入 empty；`last_audit_delivery_untagged_at` 取 invalid/empty 最新值。
+      - ops_risk 报告窗口：按 audit 事件时间回溯 `days`，将上述指标以 `git_sync_*` 命名完整映射并保持类型一致。
+    - 本轮最小回归：
+      - 执行：`cd backend && python -m pytest tests/test_api_smoke.py -q --tb=short`
+      - 结果：`48 passed in 151.43s`（exit_code=0）
+    - 推送结果：
+      - 待回填（本地提交并执行 `git push origin main` 后补齐失败原因/成功区间）
