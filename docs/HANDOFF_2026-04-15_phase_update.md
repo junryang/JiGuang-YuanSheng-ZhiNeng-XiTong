@@ -1151,5 +1151,9 @@
       - 见条目 120。
 
 120. 条目 119 同步远端记录（运维追溯）
-    - 本地提交：（待回填）
-    - 推送结果：（待 push/重试后回填）
+    - 本地提交：
+      - `01efb77`（`feat(ops): add git sync silence state color fields`）
+      - `f8b55ce`（`docs(handoff): append items 119-120 for silence state colors`）
+    - 推送结果：
+      - 首次 `git push origin main` 失败：`Recv failure: Connection was reset`
+      - 第 2 次重试成功：`5d3f69b..f8b55ce  main -> main`
