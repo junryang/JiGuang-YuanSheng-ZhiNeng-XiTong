@@ -2249,7 +2249,7 @@ def audit_summary(
         None, description="仅在 project_stage_timeout_alert 事件内过滤环境(dev|staging|prod)"
     ),
     stage_timeout_policy_id: str | None = Query(
-        "project_stage_flow", description="仅在 project_stage_timeout_alert 事件内过滤 policy_id"
+        None, description="仅在 project_stage_timeout_alert 事件内过滤 policy_id（可选）"
     ),
     stage_timeout_reason_code: str | None = Query(
         None, description="仅在 project_stage_timeout_alert 事件内过滤 reason_code"

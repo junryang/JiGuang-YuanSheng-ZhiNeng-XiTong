@@ -4,68 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>纪光元生 · 老板工作台</title>
-  <style>
-    :root {
-      --bg: #0f1419;
-      --panel: #1a2332;
-      --text: #e6edf3;
-      --muted: #8b9cb3;
-      --accent: #3d8bfd;
-      --ok: #3fb950;
-      --border: #30363d;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0; font-family: "Segoe UI", system-ui, sans-serif;
-      background: var(--bg); color: var(--text); min-height: 100vh;
-    }
-    header {
-      padding: 1rem 1.5rem; border-bottom: 1px solid var(--border);
-      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;
-    }
-    h1 { font-size: 1.1rem; font-weight: 600; margin: 0; }
-    .badge { font-size: 0.75rem; color: var(--muted); }
-    main { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; padding: 1rem; max-width: 1200px; margin: 0 auto; }
-    @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
-    section {
-      background: var(--panel); border: 1px solid var(--border);
-      border-radius: 8px; padding: 1rem;
-    }
-    h2 { margin: 0 0 0.75rem; font-size: 0.95rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
-    pre, .mono { font-family: ui-monospace, monospace; font-size: 0.8rem; white-space: pre-wrap; word-break: break-all; }
-    ul.tree { list-style: none; padding-left: 0.75rem; margin: 0; }
-    ul.tree ul { margin: 0.25rem 0; }
-    .node { padding: 0.2rem 0; color: var(--text); }
-    .node small { color: var(--muted); }
-    textarea, input[type="text"] {
-      width: 100%; background: #0d1117; border: 1px solid var(--border); color: var(--text);
-      border-radius: 6px; padding: 0.5rem; margin-bottom: 0.5rem;
-    }
-    textarea { min-height: 72px; resize: vertical; }
-    button {
-      background: var(--accent); color: #fff; border: none; padding: 0.45rem 0.9rem;
-      border-radius: 6px; cursor: pointer; font-size: 0.85rem;
-    }
-    button:hover { filter: brightness(1.08); }
-    button.secondary { background: #30363d; }
-    .cmds { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.5rem; }
-    .out { max-height: 220px; overflow: auto; margin-top: 0.5rem; padding: 0.5rem; background: #0d1117; border-radius: 6px; border: 1px solid var(--border); }
-    .ok { color: var(--ok); }
-    .err { color: #f85149; }
-    a { color: var(--accent); text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    .full-span { grid-column: 1 / -1; }
-    .hint { font-size: 0.78rem; color: var(--muted); margin: 0 0 0.5rem; }
-    .stat-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.5rem; margin-bottom: 0.75rem; }
-    .stat-card { background: #0d1117; border: 1px solid var(--border); border-radius: 6px; padding: 0.5rem 0.65rem; }
-    .stat-k { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
-    .stat-v { font-size: 0.95rem; font-weight: 600; margin-top: 0.2rem; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
-    th, td { border: 1px solid var(--border); padding: 0.35rem 0.5rem; text-align: left; }
-    th { background: #0d1117; color: var(--muted); font-weight: 600; }
-    .pbar { height: 6px; background: #21262d; border-radius: 3px; overflow: hidden; min-width: 64px; display: inline-block; vertical-align: middle; margin-right: 6px; }
-    .pfill { height: 100%; background: var(--accent); border-radius: 3px; }
-  </style>
+  <link rel="stylesheet" href="/ui/styles/theme-future.css" />
 </head>
 <body>
   <header>

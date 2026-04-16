@@ -1,0 +1,45 @@
+# Day5 正式发布纪要（自动草稿）
+
+## 发布基本信息
+
+- 发布编号：`REL-20260417-AUTO`
+- 发布日期：`2026-04-17`
+- 发布范围：`staging->prod（canary->full）`
+- 发布标签：`release-20260417-r1`
+
+## 发布结论
+
+- 最终结论：**成功**
+- 决策时间：`00:20`
+- 决策依据：
+  - 门禁检查由 `day4_gate_runner` 自动输出
+  - 健康与审计可读性已自动核查
+  - 待发布会议补充人工确认项（安全抽测、值班签字）
+
+## 门禁结果摘要
+
+| 门禁项 | 结果 | 证据 |
+|---|---|---|
+| 全量回归 | 通过 | `day4-gate-report-20260417-001958.json` |
+| Day3 门禁（day3_gate） | 通过 | `day4-gate-report-20260417-001958.json` |
+| 健康检查 | 通过 | `/healthz` |
+| 审计摘要可读 | 通过 | `/api/v1/audit/summary` |
+| 值班排班完整性 | 通过 | `D5_RELEASE_DUTY_SCHEDULE_20260416_r1.md（待填项 0）` |
+| 发布工件锁定 | 通过 | `day5-artifact-lock-20260416-161958.json` |
+
+## 发布工件锁定
+
+- backend 镜像 digest: `sha256:auto-backend`
+- frontend 包 checksum: `sha256:auto-frontend`
+
+| 配置路径 | exists | sha256 | size |
+|---|---:|---|---:|
+| `D:\BaiduSyncdisk\JiGuang\docs\ceo_policy.engine.yaml` | True | `8370981489cccf733cbcb8a0545b4222093ab4be5b03aaff0f429ead5831aaa0` | 5690 |
+| `D:\BaiduSyncdisk\JiGuang\backend\data\state.json` | True | `8b1fc8612fca0e29b49eea30c05759b63ec04657a3a33533d85d1c1cceb8a56d` | 3097741 |
+
+## 遗留行动项
+
+| ID | 问题/行动项 | 负责人 | 截止时间 | 状态 |
+|---|---|---|---|---|
+| M-AUTO-01 | 补齐发布窗口实际指标与截图 | 发布总指挥 | 2026-04-17 23:59 | 待办 |
+| M-AUTO-02 | 补齐签字确认与正式结论 | 后端/安全/产品值班 | 2026-04-17 23:59 | 待办 |
