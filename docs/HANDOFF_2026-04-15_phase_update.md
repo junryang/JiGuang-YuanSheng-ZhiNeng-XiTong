@@ -677,3 +677,15 @@
 
 76. 条目 75 同步远端记录（运维追溯）
     - 本地提交：`d575df1`（`feat(ops): audit_delivery invalid metrics for git summary and ops_risk`），已成功推送至 `origin/main`（首轮 `git push` 曾遇 `Recv failure: Connection was reset`，重试后成功）。
+
+77. Git 摘要与运营风险报告补充审计投递「空标记」分解（完成后增强）
+    - 文件：`backend/app/api/routes.py`、`backend/tests/test_api_smoke.py`
+    - 变更：
+      - `GET /api/v1/ops/git-sync/summary` 新增：
+        - `audit_delivery_empty_count`：`context.audit_delivery` 缺省或去空格后为空（未打点）的条数
+        - `audit_delivery_empty_rate`（相对 `totals.total`，保留 1 位小数）
+      - `GET /api/v1/analytics/reports?report_type=ops_risk` 新增：
+        - `git_sync_audit_delivery_empty_count`、`git_sync_audit_delivery_empty_rate`
+      - 摘要主循环内每条合法同步事件在审计投递维度上互斥归入：`success|failed`（计入 tagged）、非法非空取值、空标记；因此恒有 `tagged + invalid + empty == totals.total`，且 `untagged == invalid + empty`。
+      - 运营报告侧：`empty`/`invalid` 仅对 `context.status` 为 `success|failure|skipped` 的事件计数；`git_sync_audit_delivery_success/failed` 仍来自全窗口内全部 `git_sync_status` 事件。若存在非规范 `context.status` 的存量数据，可能出现 `git_sync_audit_delivery_untagged_count` 大于 `invalid + empty` 的情况（分母仍为 `git_sync_event_count`）。
+      - 最小回归：向 `test_git_sync_summary_endpoint` / `test_analytics_reports_project_execution_and_ops_risk` 追加无 `audit_delivery` 的成功样例，并校验摘要侧分拆恒等式。

@@ -259,6 +259,16 @@ def test_git_sync_summary_endpoint():
             },
         },
     )
+    client.post(
+        "/api/v1/ops/git-sync/events",
+        json={
+            "branch": "main",
+            "status": "success",
+            "source": "git_auto_sync.ps1",
+            "environment": "dev",
+            "context": {"status": "success", "branch": "main", "push_attempts": 1},
+        },
+    )
     r = client.get("/api/v1/ops/git-sync/summary", params={"days": 7, "environment": "dev"})
     assert r.status_code == 200
     body = r.json()
@@ -309,6 +319,8 @@ def test_git_sync_summary_endpoint():
     assert "audit_delivery_invalid_rate" in body
     assert "last_audit_delivery_invalid_at" in body
     assert "minutes_since_last_audit_delivery_invalid" in body
+    assert "audit_delivery_empty_count" in body
+    assert "audit_delivery_empty_rate" in body
     assert "last_audit_delivery_success_at" in body
     assert "last_audit_delivery_failed_at" in body
     assert "minutes_since_last_audit_delivery_success" in body
@@ -321,9 +333,19 @@ def test_git_sync_summary_endpoint():
     assert body["timeline"][0]["bucket_label"] == body["timeline"][0]["bucket"]
     assert body["bucket_count"] == len(body["timeline"])
     assert 0 <= body["non_empty_bucket_count"] <= body["bucket_count"]
-    assert body["totals"]["total"] >= 4
+    assert body["totals"]["total"] >= 5
     assert body["audit_delivery_invalid_count"] >= 1
     assert body["audit_delivery_invalid_rate"] > 0.0
+    assert body["audit_delivery_empty_count"] >= 1
+    assert body["audit_delivery_empty_rate"] > 0.0
+    _t = body["totals"]["total"]
+    assert (
+        body["audit_delivery_tagged_count"]
+        + body["audit_delivery_invalid_count"]
+        + body["audit_delivery_empty_count"]
+        == _t
+    )
+    assert body["audit_delivery_untagged_count"] == body["audit_delivery_invalid_count"] + body["audit_delivery_empty_count"]
     assert isinstance(body["last_success_at"], str)
     assert isinstance(body["last_failure_at"], str)
     assert isinstance(body["last_skipped_at"], str)
@@ -360,6 +382,8 @@ def test_git_sync_summary_endpoint():
     assert isinstance(body["audit_delivery_invalid_rate"], float)
     assert isinstance(body["last_audit_delivery_invalid_at"], str)
     assert isinstance(body["minutes_since_last_audit_delivery_invalid"], float)
+    assert isinstance(body["audit_delivery_empty_count"], int)
+    assert isinstance(body["audit_delivery_empty_rate"], float)
     assert isinstance(body["last_audit_delivery_success_at"], str)
     assert isinstance(body["last_audit_delivery_failed_at"], str)
     assert isinstance(body["minutes_since_last_audit_delivery_success"], float)
@@ -539,6 +563,16 @@ def test_analytics_reports_project_execution_and_ops_risk():
             },
         },
     )
+    _ = client.post(
+        "/api/v1/ops/git-sync/events",
+        json={
+            "branch": "main",
+            "status": "success",
+            "source": "git_auto_sync.ps1",
+            "environment": "dev",
+            "context": {"status": "success", "branch": "main", "push_attempts": 1},
+        },
+    )
 
     pe = client.get("/api/v1/analytics/reports", params={"report_type": "project_execution", "environment": "dev"})
     assert pe.status_code == 200
@@ -580,6 +614,8 @@ def test_analytics_reports_project_execution_and_ops_risk():
     assert "git_sync_audit_delivery_invalid_rate" in opsb
     assert "last_git_sync_audit_delivery_invalid_at" in opsb
     assert "minutes_since_last_git_sync_audit_delivery_invalid" in opsb
+    assert "git_sync_audit_delivery_empty_count" in opsb
+    assert "git_sync_audit_delivery_empty_rate" in opsb
     assert "git_sync_net_success_rate" in opsb
     assert "git_sync_failure_pressure_index" in opsb
     assert "git_sync_event_density_per_day" in opsb
@@ -633,6 +669,10 @@ def test_analytics_reports_project_execution_and_ops_risk():
     assert isinstance(opsb["minutes_since_last_git_sync_audit_delivery_invalid"], float)
     assert opsb["git_sync_audit_delivery_invalid_count"] >= 1
     assert opsb["git_sync_audit_delivery_invalid_rate"] > 0.0
+    assert isinstance(opsb["git_sync_audit_delivery_empty_count"], int)
+    assert isinstance(opsb["git_sync_audit_delivery_empty_rate"], float)
+    assert opsb["git_sync_audit_delivery_empty_count"] >= 1
+    assert opsb["git_sync_audit_delivery_empty_rate"] > 0.0
     assert isinstance(opsb["git_sync_net_success_rate"], float)
     assert isinstance(opsb["git_sync_failure_pressure_index"], float)
     assert isinstance(opsb["git_sync_event_density_per_day"], float)
