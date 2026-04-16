@@ -1039,3 +1039,26 @@
     - 推送结果：
       - 首次 `git push origin main` 失败：`Recv failure: Connection was reset`
       - 第 2 次重试成功：`b02b91f..08eddb5  main -> main`
+
+111. Git 同步摘要与运营风险报告补充静默严重度等级排序字段（完成后增强）
+    - 文件：`backend/app/api/routes.py`、`backend/tests/test_api_smoke.py`
+    - 接口字段（兼容追加，不破坏既有字段）：
+      - `GET /api/v1/ops/git-sync/summary` 新增：`sync_silence_severity_level_rank`（`int`）
+      - `GET /api/v1/analytics/reports?report_type=ops_risk` 新增：`git_sync_event_silence_severity_level_rank`（`int`）
+    - 统计口径：
+      - 与既有 `*_silence_severity_level` 一一对应：
+        - `low` → `0`
+        - `medium` → `1`
+        - `high` → `2`
+        - `missing` → `3`
+      - 目标：便于排序、阈值比较与外部规则引擎直接消费，不必自行映射等级。
+    - 测试覆盖：
+      - 最小回归：`python -m pytest tests/test_api_smoke.py -q --tb=short`
+      - 结果：`48 passed in 143.25s`
+      - 新增断言：字段存在、类型为 `int` 且取值集合为 `{0,1,2,3}`。
+    - 推送结果：
+      - 见条目 112。
+
+112. 条目 111 同步远端记录（运维追溯）
+    - 本地提交：（待 commit 后回填）
+    - 推送结果：（待 push/重试后回填）
