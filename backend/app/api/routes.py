@@ -1536,6 +1536,8 @@ def git_sync_summary(
     audit_delivery_net_density_per_day = round(
         (audit_delivery_success_count - audit_delivery_failed_count) / ndays, 2
     )
+    audit_delivery_invalid_density_per_day = round(audit_delivery_invalid_count / ndays, 2)
+    audit_delivery_empty_density_per_day = round(audit_delivery_empty_count / ndays, 2)
     audit_delivery_tagged_count = audit_delivery_success_count + audit_delivery_failed_count
     audit_delivery_coverage_rate = (
         round((audit_delivery_tagged_count / totals["total"]) * 100, 1) if totals["total"] > 0 else 0.0
@@ -1648,6 +1650,8 @@ def git_sync_summary(
         "audit_delivery_success_density_per_day": audit_delivery_success_density_per_day,
         "audit_delivery_failed_density_per_day": audit_delivery_failed_density_per_day,
         "audit_delivery_net_density_per_day": audit_delivery_net_density_per_day,
+        "audit_delivery_invalid_density_per_day": audit_delivery_invalid_density_per_day,
+        "audit_delivery_empty_density_per_day": audit_delivery_empty_density_per_day,
         "audit_delivery_tagged_count": audit_delivery_tagged_count,
         "audit_delivery_coverage_rate": audit_delivery_coverage_rate,
         "audit_delivery_untagged_count": audit_delivery_untagged_count,
@@ -1860,6 +1864,12 @@ def analytics_reports(
     git_sync_audit_delivery_net_density_per_day = round(
         (git_audit_delivery_success - git_audit_delivery_failed) / max(1, int(days)), 2
     )
+    git_sync_audit_delivery_invalid_density_per_day = round(
+        git_audit_delivery_invalid / max(1, int(days)), 2
+    )
+    git_sync_audit_delivery_empty_density_per_day = round(
+        git_audit_delivery_empty / max(1, int(days)), 2
+    )
     git_sync_audit_delivery_tagged_count = git_audit_delivery_success + git_audit_delivery_failed
     git_sync_audit_delivery_coverage_rate = (
         round((git_sync_audit_delivery_tagged_count / git_total) * 100, 1) if git_total > 0 else 0.0
@@ -1945,6 +1955,8 @@ def analytics_reports(
         "git_sync_audit_delivery_success_density_per_day": git_sync_audit_delivery_success_density_per_day,
         "git_sync_audit_delivery_failed_density_per_day": git_sync_audit_delivery_failed_density_per_day,
         "git_sync_audit_delivery_net_density_per_day": git_sync_audit_delivery_net_density_per_day,
+        "git_sync_audit_delivery_invalid_density_per_day": git_sync_audit_delivery_invalid_density_per_day,
+        "git_sync_audit_delivery_empty_density_per_day": git_sync_audit_delivery_empty_density_per_day,
         "git_sync_audit_delivery_tagged_count": git_sync_audit_delivery_tagged_count,
         "git_sync_audit_delivery_coverage_rate": git_sync_audit_delivery_coverage_rate,
         "git_sync_audit_delivery_untagged_count": git_sync_audit_delivery_untagged_count,

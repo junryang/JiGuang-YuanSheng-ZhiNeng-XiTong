@@ -702,3 +702,10 @@
 
 80. 条目 79 同步远端记录（运维追溯）
     - 本地提交：`cd3a4d2`（`feat(ops): audit_delivery empty last-seen timestamps for summary and ops_risk`），已推送至 `origin/main`。
+
+81. Git 摘要与运营风险报告补充审计投递非法/空标记日均密度（完成后增强）
+    - 文件：`backend/app/api/routes.py`、`backend/tests/test_api_smoke.py`
+    - 变更：
+      - `GET /api/v1/ops/git-sync/summary` 新增：`audit_delivery_invalid_density_per_day`、`audit_delivery_empty_density_per_day`（分别 `invalid_count / days`、`empty_count / days`，`days` 为摘要参数 `days`，保留 2 位小数，与 `audit_delivery_success_density_per_day` 等口径一致）。
+      - `GET /api/v1/analytics/reports?report_type=ops_risk` 新增：`git_sync_audit_delivery_invalid_density_per_day`、`git_sync_audit_delivery_empty_density_per_day`（分母 `max(1, days)`，与报告参数 `days` 对齐）。
+      - 最小回归：`test_git_sync_summary_endpoint`、`test_analytics_reports_project_execution_and_ops_risk` 增加字段存在性与 `float` 类型断言。
