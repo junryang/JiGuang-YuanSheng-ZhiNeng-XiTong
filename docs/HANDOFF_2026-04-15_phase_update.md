@@ -1290,3 +1290,293 @@
     - 推送结果：
       - 第 1 次推送失败：`Recv failure: Connection was reset`
       - 第 2 次推送成功：`898491c..cb69f57  main -> main`
+
+130. 项目阶段（StageEngine）流转 API 落地与回归验证（Phase 继续开发）
+    - 文件：
+      - `backend/app/main.py`（接入 `stages_router`）
+      - `backend/app/api/stages_router.py`（阶段路由：list/get/start/complete/approve/deliverables）
+      - `backend/app/services/project_stage_engine.py`（StageEngine：阶段初始化、运行态流转、必需交付物校验、自动推进下一阶段）
+      - `backend/app/models/project_stage.py`（阶段/交付物/审批 Pydantic 模型）
+      - `backend/tests/test_project_stages_api.py`（阶段 API 关键链路回归）
+    - 接口字段（新增运行时 API 契约）：
+      - `GET /api/v1/projects/{project_id}/stages`：返回 `ProjectStage[]`（含 `id/name/phase/order/status/start_date/end_date/actual_deliverables/comments` 等）
+      - `GET /api/v1/projects/{project_id}/stages/{stage_id}`：返回单阶段 `ProjectStage`
+      - `POST /api/v1/projects/{project_id}/stages/{stage_id}/start`：将阶段 `pending -> in_progress`（带 `start_date`）
+      - `POST /api/v1/projects/{project_id}/stages/{stage_id}/complete`：将阶段 `in_progress -> completed`（写入 `end_date` 与 `actual_deliverables`，支持 comments）
+      - `POST /api/v1/projects/{project_id}/stages/{stage_id}/approve`：将阶段设置为 `approved/rejected`（comments 可选）
+      - `GET /api/v1/projects/{project_id}/stages/{stage_id}/deliverables`：返回该阶段 `actual_deliverables`
+      - `POST /api/v1/projects/{project_id}/stages/{stage_id}/deliverables/{deliverable_name}`：补齐单个交付物到 `actual_deliverables`
+    - 统计口径/映射规则（运行逻辑）：
+      - `complete` 校验：以阶段定义里 `deliverables[].required == true` 的交付物名称为准，`payload.deliverables` 必须包含全部必需名称（否则返回 `400`）
+      - 自动推进：当某阶段 `complete` 后，按 `order` 自动将下一阶段 `pending -> in_progress`
+    - 本轮回归执行：
+      - `cd backend && python -m pytest tests/test_api_smoke.py -q --tb=short`：`48 passed in 1.75s`
+      - `cd backend && python -m pytest tests/test_project_stages_api.py -q --tb=short`：`2 passed in 0.93s`
+    - 推送结果：
+      - 第 1 次推送结果：`[待填]`
+
+131. 项目详情页接入阶段生命周期视图与操作入口（Phase4 前端集成延伸）
+    - 文件：
+      - `backend/web/project.html`（新增阶段生命周期区块、当前阶段视图、start/complete/approve/reject 操作）
+      - `backend/tests/test_ui_pages_smoke.py`（新增项目页阶段区块静态断言）
+    - 接口字段/前端映射：
+      - 页面新增对 `GET /api/v1/projects/{project_id}/stages` 的读取，用于渲染阶段表格与当前阶段卡片
+      - 页面新增对 `POST /api/v1/projects/{project_id}/stages/{stage_id}/start`、`/complete`、`/approve` 的调用入口
+      - `stageDeliverablesJson` 作为 `complete` 的 JSON 输入区，按当前阶段 `deliverables[].required` 自动生成必填交付物草稿
+      - `stageComments` 统一承载阶段备注/审批意见，并回显到当前阶段详情
+    - 统计口径/映射规则：
+      - 当前阶段优先级：`in_progress` > `pending` > `completed` > 首项阶段
+      - 阶段完成时默认优先回显 `actual_deliverables`；若为空则回退到阶段定义中的必需交付物草稿
+    - 本轮回归执行：
+      - `cd backend && python -m pytest tests/test_ui_pages_smoke.py -q --tb=short`：`11 passed in 1.23s`
+      - `cd backend && python -m pytest tests/test_project_stages_api.py -q --tb=short`：`2 passed in 1.00s`
+      - `cd backend && python -m pytest tests/test_api_smoke.py -q --tb=short`：`48 passed in 2.05s`
+    - 推送结果：
+      - 第 1 次推送结果：`[待填]`
+
+132. 阶段单交付物上传闭环与项目页定义展示（Phase4 前端集成继续）
+    - 文件：
+      - `backend/app/api/stages_router.py`（收紧单交付物上传约束：仅允许阶段定义中存在的交付物，按名称覆盖更新）
+      - `backend/tests/test_project_stages_api.py`（新增单交付物上传/覆盖/未知名称拒绝回归）
+      - `backend/web/project.html`（新增交付物定义表、单交付物名称输入、JSON 上传按钮）
+      - `backend/tests/test_ui_pages_smoke.py`（新增项目页单交付物上传入口静态断言）
+    - 接口字段/运行约束：
+      - `POST /api/v1/projects/{project_id}/stages/{stage_id}/deliverables/{deliverable_name}`：
+        仅接受当前阶段 `deliverables[].name` 中定义过的交付物；若名称未知则返回 `400` + `error_code=UNKNOWN_DELIVERABLE`
+      - 同名交付物再次上传时，按 `name` 覆盖旧记录而不是重复追加，保持 `actual_deliverables` 唯一性
+      - 项目页会回显当前阶段定义中的 `type/template/schema/required`，并预填单交付物 JSON 草稿
+    - 统计口径/映射规则：
+      - `actual_deliverables` 列表按交付物名称去重，最新一次上传内容为准
+      - 项目页单交付物上传与整包 `complete` 互补：前者做增量归档，后者做阶段完成校验
+    - 本轮回归执行：
+      - `cd backend && python -m pytest tests/test_project_stages_api.py -q --tb=short`：`3 passed in 1.10s`
+      - `cd backend && python -m pytest tests/test_ui_pages_smoke.py -q --tb=short`：`11 passed in 1.21s`
+      - `cd backend && python -m pytest tests/test_api_smoke.py -q --tb=short`：`48 passed in 2.24s`
+    - 推送结果：
+      - 第 1 次推送结果：`[待填]`
+
+133. 阶段状态机对齐生命周期规范：complete->review（需审批）且 approve 后推进下一阶段
+    - 文件：
+      - `backend/app/services/project_stage_engine.py`（阶段状态机：审批必需时进入 review；approve 后才推进下一阶段）
+      - `backend/tests/test_project_stages_api.py`（更新端到端期望：P01 complete 后 review，approve 后 P02 才进入 in_progress）
+      - `backend/web/project.html`（UI 当前阶段选择与按钮可用性支持 review 状态）
+    - 统计口径/映射规则（运行逻辑）：
+      - `POST …/complete`：
+        - 若 `stage.approval.required == true`：状态 `in_progress -> review`（不自动推进下一阶段）
+        - 若 `stage.approval.required == false`：状态 `in_progress -> completed` 并自动推进下一阶段 `pending -> in_progress`
+      - `POST …/approve`：
+        - 允许对 `review/completed/in_progress` 调用；通过时进入 `approved` 并推进下一阶段（若存在且为 pending）
+        - 驳回时进入 `rejected`，不推进下一阶段
+      - UI 当前阶段优先级调整：`in_progress` > `review` > `pending` > `completed` > 首项
+    - 本轮回归执行：
+      - `cd backend && python -m pytest tests/test_project_stages_api.py -q --tb=short`：`3 passed in 1.24s`
+      - `cd backend && python -m pytest tests/test_ui_pages_smoke.py -q --tb=short`：`11 passed in 1.15s`
+      - `cd backend && python -m pytest tests/test_api_smoke.py -q --tb=short`：`48 passed in 2.63s`
+    - 推送结果：
+      - 第 1 次推送结果：`[待填]`
+
+134. 阶段交付物模板与 Schema 元数据回填（对齐 PROJECT_LIFECYCLE_SPEC）
+    - 文件：
+      - `backend/app/services/project_stage_engine.py`（将各阶段 deliverables 的 `template/schema` 元数据回填到阶段定义）
+      - `backend/tests/test_project_stages_api.py`（新增断言：P01 交付物包含 `template/schema`）
+    - 接口字段/映射规则：
+      - `GET /api/v1/projects/{project_id}/stages` 返回的 `deliverables[]` 现在包含：
+        - `template`：规范中定义的模板文件名（如 `market_analysis_report_template.md`）
+        - `schema`：交付物结构字段提示（JSON dict），用于 UI 预填/校验参考
+      - 仍保持向后兼容：未提供 schema 的交付物返回 `schema: null`
+    - 本轮回归执行：
+      - `cd backend && python -m pytest tests/test_project_stages_api.py -q --tb=short`：`3 passed in 1.15s`
+      - `cd backend && python -m pytest tests/test_api_smoke.py -q --tb=short`：`48 passed in 3.08s`
+    - 推送结果：
+      - 第 1 次推送结果：`[待填]`
+
+135. 阶段参与者（participants）与审批元数据可视化对齐（生命周期规范补齐）
+    - 文件：
+      - `backend/app/services/project_stage_engine.py`
+        - StageDefinition 增补 `participants`
+        - 回填 P01~P09 参与角色/层级/职责
+        - 审批元数据补齐：`timeout_hours`、`condition`、`default_approver_role`（如 P04 条件审批）
+      - `backend/web/project.html`（项目页新增：审批信息 pill + 参与者表格展示）
+      - `backend/tests/test_project_stages_api.py`（断言：P01 participants 非空且包含“营销主管”）
+      - `backend/tests/test_ui_pages_smoke.py`（断言：项目页包含 `stageApprovalPill` / `stagePartBody`）
+    - 接口字段/映射规则：
+      - `GET /api/v1/projects/{project_id}/stages` 返回的 `participants[]`：每项包含 `role/level/responsibility`
+      - `approval` 返回中 `timeout_hours/condition/default_approver_role` 作为 UI 展示与操作参考
+    - 回归执行注意事项（本仓库特性）：
+      - 多个 pytest 进程并行执行会同时写 `backend/data/state.json`，可能互相覆盖导致偶发 404；
+        本轮回归证据均采用串行执行以避免竞态噪音。
+    - 本轮回归执行（串行）：
+      - `cd backend && python -m pytest tests/test_project_stages_api.py -q --tb=short`：`3 passed in 1.23s`
+      - `cd backend && python -m pytest tests/test_ui_pages_smoke.py -q --tb=short`：`11 passed in 1.34s`
+      - `cd backend && python -m pytest tests/test_api_smoke.py -q --tb=short`：`48 passed in 3.79s`
+    - 推送结果：
+      - 第 1 次推送结果：`[待填]`
+
+136. 测试环境 state 存储隔离：消除并行 pytest 写 state.json 的竞态 404
+    - 文件：
+      - `backend/app/main.py`
+    - 背景与风险：
+      - 本仓库默认使用 JSON 文件持久化（`backend/data/state.json`），pytest 多进程/并行执行时会同时写入同一文件，
+        触发偶发覆盖，表现为 API 404（project not found / stages not found）等非确定性失败。
+    - 实现说明：
+      - 在 `create_app()` 中新增 state 路径选择逻辑：
+        - 若设置 `JYIS_STATE_PATH`：优先使用该路径
+        - 若处于 pytest（用 `pytest in sys.modules` + `PYTEST_CURRENT_TEST` 兜底识别）且 `JYIS_TEST_STATE_ISOLATION!=0/false`：
+          使用进程级临时文件 `jyis-state-pytest-{pid}.json`（位于系统 temp 目录），避免污染仓库文件与并发竞态
+        - 否则回退到仓库默认 `backend/data/state.json`
+    - 本轮回归执行（并行验证）：
+      - 并行执行 `cd backend && python -m pytest tests/test_api_smoke.py -q --tb=short`：`48 passed in 1.91s`
+      - 并行执行 `cd backend && python -m pytest tests/test_project_stages_api.py -q --tb=short`：`3 passed in 1.28s`
+    - 推送结果：
+      - 第 1 次推送结果：`[待填]`
+
+137. 阶段生命周期动作接入审计（AuditStore）：start/complete/approve/upload 全链路可追溯
+    - 文件：
+      - `backend/app/api/stages_router.py`（阶段路由写审计事件，失败路径也记录 denied）
+      - `backend/tests/test_project_stages_api.py`（新增断言：阶段动作会产出 `project_stage_*` 审计事件）
+    - 审计事件约定：
+      - policy：`project_stage_flow@v1`
+      - event_type：
+        - `project_stage_start`
+        - `project_stage_complete`
+        - `project_stage_approve`（allowed 反映 approve/reject 决策）
+        - `project_stage_deliverable_upload`
+      - context 关键字段：
+        - `project_id`、`stage_id`（必带）
+        - `status`、`deliverable_count`、`deliverable_name` 等用于追溯
+      - reason_code（示例）：
+        - `STAGE_STARTED` / `STAGE_COMPLETED` / `STAGE_APPROVED` / `STAGE_REJECTED`
+        - `UNKNOWN_DELIVERABLE`、`STAGE_*_INVALID`、`*_NOT_FOUND`
+    - 本轮回归执行：
+      - `cd backend && python -m pytest tests/test_project_stages_api.py -q --tb=short`：`3 passed in 1.32s`
+      - `cd backend && python -m pytest tests/test_api_smoke.py -q --tb=short`：`48 passed in 1.92s`
+    - 推送结果：
+      - 第 1 次推送结果：`[待填]`
+
+138. 条件审批可执行化：引入项目预算 budget 并动态选择 P04 实际审批人
+    - 文件：
+      - `backend/app/api/routes.py`（项目创建/更新请求新增可选字段 `budget`）
+      - `backend/app/models/project_stage.py`（Approval 增补 `default_approver_level`）
+      - `backend/app/services/project_stage_engine.py`
+        - 解析 `approval.condition`（当前支持 `budget > N` / `>=` / `<` / `<=`）
+        - P04 当条件不满足时使用 `default_approver_role/default_approver_level` 覆盖实际审批人
+        - 当预算更新导致条件翻转时，`ensure_project_stages` 会 best-effort 重新计算并修正已生成 stages 的审批人字段
+      - `backend/tests/test_project_stages_api.py`（新增回归：budget=0 走 CEO；budget=200000 走 老板）
+    - 接口字段/映射规则：
+      - 项目字段（新增、向后兼容）：`budget?: int`（>=0）
+      - `GET /api/v1/projects/{id}/stages` 中 `stage.approval.approver_role/approver_level` 表示“实际审批人”
+      - P04 规则：
+        - 若 `budget > 100000`：审批人为 `老板/L0`
+        - 否则：审批人为 `CEO/L1`
+    - 本轮回归执行：
+      - `cd backend && python -m pytest tests/test_project_stages_api.py -q --tb=short`：`3 passed in 1.37s`
+      - `cd backend && python -m pytest tests/test_ui_pages_smoke.py -q --tb=short`：`11 passed in 1.31s`
+      - `cd backend && python -m pytest tests/test_api_smoke.py -q --tb=short`：`48 passed in 1.94s`
+    - 推送结果：
+      - 第 1 次推送结果：`[待填]`
+
+139. 阶段审批“谁在批”校验落地：approve/reject 可选携带 approver_role/level 并做匹配校验
+    - 文件：
+      - `backend/app/models/project_stage.py`（StageApproveRequest 增补 `approver_role/approver_level`，向后兼容）
+      - `backend/app/api/stages_router.py`
+        - 当请求体提供 `approver_role/approver_level` 时，校验是否与 `stage.approval.approver_role/approver_level` 一致
+        - 不一致返回 `400` + `error_code=APPROVER_MISMATCH`，并写入审计事件
+        - 审计 context 增补 `approver_role/approver_level`
+      - `backend/web/project.html`（调用 approve/reject 时 best-effort 传递当前阶段期望审批人身份）
+      - `backend/tests/test_project_stages_api.py`（新增反例回归：错人审批触发 `APPROVER_MISMATCH`）
+    - 接口字段/映射规则：
+      - `POST /api/v1/projects/{project_id}/stages/{stage_id}/approve` 请求体可选字段：
+        - `approver_role?: string`
+        - `approver_level?: string`
+      - 校验策略：仅当提供字段时校验（保持旧客户端不传字段仍可用）
+    - 本轮回归执行：
+      - `cd backend && python -m pytest tests/test_project_stages_api.py -q --tb=short`：`3 passed in 1.35s`
+      - `cd backend && python -m pytest tests/test_api_smoke.py -q --tb=short`：`48 passed in 1.97s`
+    - 推送结果：
+      - 第 1 次推送结果：`[待填]`
+
+140. staging/prod 环境强制审批人身份：approve/reject 必须携带 approver_role/level
+    - 文件：
+      - `backend/app/api/stages_router.py`（按项目 environment 强制：staging/prod 缺少 approver 身份直接 400）
+      - `backend/tests/test_project_stages_api.py`（新增回归：staging 下缺少 approver 身份返回 `APPROVER_ID_REQUIRED`）
+    - 规则说明：
+      - `dev`：保持兼容，`approver_role/approver_level` 可选（提供则校验）
+      - `staging/prod`：`approver_role/approver_level` 必填，否则返回：
+        - HTTP 400
+        - `error_code=APPROVER_ID_REQUIRED`
+      - 仍会写入 `project_stage_approve` 审计事件（denied）
+    - 本轮回归执行：
+      - `cd backend && python -m pytest tests/test_project_stages_api.py -q --tb=short`：`4 passed in 1.41s`
+      - `cd backend && python -m pytest tests/test_api_smoke.py -q --tb=short`：`48 passed in 1.85s`
+    - 推送结果：
+      - 第 1 次推送结果：`[待填]`
+
+141. 项目页阶段审批可用性增强：环境/预算/条件触发提示 + 一键复制审批身份 JSON
+    - 文件：
+      - `backend/web/project.html`
+        - 新增 UI：`stageEnvBudgetPill`、`stageConditionPill`、`stageApproverReqPill`
+        - 新增按钮：`btnCopyApproverJson`（复制 `{approver_role, approver_level}`）
+        - `renderCurrentStage()` 基于 `proj.environment/proj.budget` 显示条件审批触发状态（支持 `budget >=/<=/>/< N`）
+      - `backend/tests/test_ui_pages_smoke.py`（新增断言：上述元素存在）
+    - UX 规则：
+      - staging/prod：明确提示“审批身份必填”，降低触发 `APPROVER_ID_REQUIRED` 的误操作
+      - 条件审批：展示 `approval.condition` 与当前预算下是否“触发/未触发”（仅用于提示，实际审批人以后端返回为准）
+      - 一键复制：用于在外部工具/接口调用时快速填充审批身份字段
+    - 本轮回归执行：
+      - `cd backend && python -m pytest tests/test_ui_pages_smoke.py -q --tb=short`：`11 passed in 1.45s`
+      - `cd backend && python -m pytest tests/test_api_smoke.py -q --tb=short`：`48 passed in 1.89s`
+    - 推送结果：
+      - 第 1 次推送结果：`[待填]`
+
+142. 审批身份字段防绕过收口：只要出现 approver_role/level 任一字段，必须两者齐全
+    - 文件：
+      - `backend/app/api/stages_router.py`（新增拒绝码 `APPROVER_ID_INCOMPLETE`，避免半身份绕过）
+      - `backend/tests/test_project_stages_api.py`（新增回归：仅传 approver_role 返回 `APPROVER_ID_INCOMPLETE`）
+    - 规则说明：
+      - 任意环境：若请求体出现 `approver_role` 或 `approver_level` 任一字段，则两者必须同时提供且非空
+      - staging/prod：仍保持强制必填（缺失任一字段返回 `APPROVER_ID_REQUIRED`）
+      - 不完整身份返回：
+        - HTTP 400
+        - `error_code=APPROVER_ID_INCOMPLETE`
+      - 同时写入审计事件（denied）
+    - 本轮回归执行：
+      - `cd backend && python -m pytest tests/test_project_stages_api.py -q --tb=short`：`4 passed in 1.41s`
+      - `cd backend && python -m pytest tests/test_api_smoke.py -q --tb=short`：`48 passed in 1.91s`
+    - 推送结果：
+      - 第 1 次推送结果：`[待填]`
+
+143. 阶段审批历史落盘与项目页展示：新增 approval_history[] 追溯审批决策
+    - 文件：
+      - `backend/app/models/project_stage.py`（新增 `ApprovalHistoryItem`，ProjectStage 增补 `approval_history: []`）
+      - `backend/app/services/project_stage_engine.py`
+        - 阶段初始化补齐 `approval_history: []`
+        - `approve_stage()` 追加审批记录（timestamp/approved/approver_role/approver_level/comments），保留最近 50 条
+      - `backend/app/api/stages_router.py`（调用引擎 approve 时透传 approver 身份，确保持久化）
+      - `backend/web/project.html`（新增审批历史表格：最近 5 条审批记录展示）
+      - `backend/tests/test_project_stages_api.py`（断言：approve 后 `approval_history` 至少 1 条）
+      - `backend/tests/test_ui_pages_smoke.py`（断言：项目页包含 `stageApprHistBody`）
+    - 接口字段/映射规则：
+      - `GET /api/v1/projects/{id}/stages` 返回的 stage 新增字段：
+        - `approval_history: [{ timestamp, approved, approver_role, approver_level, comments }]`
+      - 记录追加时机：仅在 approve/reject 成功后追加（校验失败不写 stage 历史，但会写审计 denied）
+    - 本轮回归执行：
+      - `cd backend && python -m pytest tests/test_project_stages_api.py -q --tb=short`：`4 passed in 1.40s`
+      - `cd backend && python -m pytest tests/test_ui_pages_smoke.py -q --tb=short`：`11 passed in 1.52s`
+      - `cd backend && python -m pytest tests/test_api_smoke.py -q --tb=short`：`48 passed in 1.96s`
+    - 推送结果：
+      - 第 1 次推送结果：`[待填]`
+
+144. 阶段审批同步沉淀到项目讨论（project_discussions）：实现讨论/审计/阶段历史三处互证
+    - 文件：
+      - `backend/app/api/stages_router.py`（approve/reject 成功后追加一条项目讨论记录，非阻断）
+      - `backend/tests/test_project_stages_api.py`（新增断言：discussion 中包含 `[STAGE_APPROVAL]` marker）
+    - 规则与格式：
+      - 写入时机：仅 approve/reject 成功后写入（失败路径不写 discussion，但会写审计 denied）
+      - author：`stage-approval-bot`
+      - body 前缀：`[STAGE_APPROVAL]`
+      - body 内容包含：`project_id`、`stage_id`、`decision`、`approver`、`env`、`comments`
+    - 本轮回归执行：
+      - `cd backend && python -m pytest tests/test_project_stages_api.py -q --tb=short`：`4 passed in 1.40s`
+      - `cd backend && python -m pytest tests/test_api_smoke.py -q --tb=short`：`48 passed in 1.89s`
+    - 推送结果：
+      - 第 1 次推送结果：`[待填]`
