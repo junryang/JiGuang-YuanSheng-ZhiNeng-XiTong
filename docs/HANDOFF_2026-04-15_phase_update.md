@@ -936,3 +936,25 @@
       - 第 2 次重试失败：`schannel: failed to receive handshake, SSL/TLS connection failed`
       - 第 3 次重试失败：`Recv failure: Connection was reset`
       - 第 4 次重试成功：`53c0470..65559ee  main -> main`
+
+103. Git 同步摘要与运营风险报告补充静默状态标签字段（完成后增强）
+    - 文件：`backend/app/api/routes.py`、`backend/tests/test_api_smoke.py`
+    - 接口字段（兼容追加，不破坏既有字段）：
+      - `GET /api/v1/ops/git-sync/summary` 新增：`sync_silence_state_label`（`无事件|阈值内|已超阈值`）
+      - `GET /api/v1/analytics/reports?report_type=ops_risk` 新增：`git_sync_event_silence_state_label`（`无事件|阈值内|已超阈值`）
+    - 统计口径：
+      - 与既有 `*_silence_state` 一一对应：
+        - `missing` → `无事件`
+        - `within` → `阈值内`
+        - `overdue` → `已超阈值`
+      - 目标：为控制台、报表导出与交接视图提供开箱即用的人类可读标签，减少调用端翻译成本。
+    - 测试覆盖：
+      - 最小回归：`python -m pytest tests/test_api_smoke.py -q --tb=short`
+      - 结果：`48 passed in 141.35s`
+      - 新增断言：字段存在且标签枚举值合法。
+    - 推送结果：
+      - 见条目 104。
+
+104. 条目 103 同步远端记录（运维追溯）
+    - 本地提交：（待 commit 后回填）
+    - 推送结果：（待 push/重试后回填）
