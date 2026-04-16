@@ -1092,5 +1092,9 @@
       - 见条目 114。
 
 114. 条目 113 同步远端记录（运维追溯）
-    - 本地提交：（待 commit 后回填）
-    - 推送结果：（待 push/重试后回填）
+    - 本地提交：
+      - `74041cb`（`feat(ops): add git sync silence severity level labels`）
+      - `dd36f30`（`docs(handoff): append items 113-114 for severity level labels`）
+    - 推送结果：
+      - 首次 `git push origin main` 长时间无输出并卡住，已人工终止后重试
+      - 第 2 次推送成功：`48dea22..dd36f30  main -> main`
