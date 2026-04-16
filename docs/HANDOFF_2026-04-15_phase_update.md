@@ -1200,3 +1200,29 @@
       - 第 2 次推送失败：`Recv failure: Connection was reset`
       - 第 3 次推送失败：`schannel: failed to receive handshake, SSL/TLS connection failed`
       - 第 4 次推送成功：`dbc81e8..01fe9cf  main -> main`
+
+125. Git 同步摘要与运营风险报告补充静默严重度等级颜色 RGB 字段（完成后增强）
+    - 文件：`backend/app/api/routes.py`、`backend/tests/test_api_smoke.py`
+    - 接口字段（兼容追加，不破坏既有字段）：
+      - `GET /api/v1/ops/git-sync/summary` 新增：`sync_silence_severity_level_color_rgb`（`string`，`r,g,b`）
+      - `GET /api/v1/analytics/reports?report_type=ops_risk` 新增：`git_sync_event_silence_severity_level_color_rgb`（`string`，`r,g,b`）
+    - 统计口径（hex -> rgb 字符串解析，非计算）：
+      - 由 `*_silence_severity_level_color`（`#RRGGBB`）解析得到：
+        - `R` -> 十进制整数
+        - `G` -> 十进制整数
+        - `B` -> 十进制整数
+      - 输出格式：`{r},{g},{b}`（三个十进制整数，逗号分隔）
+    - 测试覆盖：
+      - 最小回归：`cd backend && python -m pytest tests/test_api_smoke.py -q --tb=short`
+      - 结果：`48 passed in 149.31s`
+      - 新增断言：`*_color_rgb` 字段存在；`split(',')` 后长度为 3 且每段均为数字。
+    - 推送结果：
+      - 见条目 126。
+
+126. 条目 125 同步远端记录（运维追溯）
+    - 本地提交：
+      - `527a433`（`feat(ops): add git sync silence severity color rgb fields`）
+      - `待回填`（`docs(handoff): append items 125-126 for silence severity color rgb`）
+    - 推送结果：
+      - 代码提交：`512dce7..527a433  main -> main`
+      - 文档提交：`待回填`
