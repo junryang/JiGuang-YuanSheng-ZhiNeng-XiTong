@@ -643,3 +643,15 @@
         - `git_sync_audit_delivery_coverage_rate`
       - 目标：衡量同步事件中有多少比例回传了审计投递状态，便于发现“主链路有事件但旁路未打点”的静默缺口。
       - 补充最小回归断言，校验字段存在且类型正确（`int`/`float`），保持兼容增强。
+
+73. Git 摘要与运营风险报告补充审计投递未标记占比（完成后增强）
+    - 文件：`backend/app/api/routes.py`、`backend/tests/test_api_smoke.py`
+    - 变更：
+      - `GET /api/v1/ops/git-sync/summary` 新增：
+        - `audit_delivery_untagged_count`（`totals.total - audit_delivery_tagged_count`，下限 0）
+        - `audit_delivery_untagged_rate`（`untagged_count / totals.total * 100`，保留 1 位小数；无事件时为 `0.0`）
+      - `GET /api/v1/analytics/reports?report_type=ops_risk` 新增：
+        - `git_sync_audit_delivery_untagged_count`
+        - `git_sync_audit_delivery_untagged_rate`
+      - 目标：与覆盖率字段互补，直接量化未携带 `success|failed` 审计投递标记的同步事件规模，便于推动脚本侧全量打点。
+      - 补充最小回归断言，校验字段存在且类型正确（`int`/`float`），保持兼容增强。
