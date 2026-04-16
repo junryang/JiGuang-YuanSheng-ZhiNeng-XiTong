@@ -956,5 +956,10 @@
       - 见条目 104。
 
 104. 条目 103 同步远端记录（运维追溯）
-    - 本地提交：（待 commit 后回填）
-    - 推送结果：（待 push/重试后回填）
+    - 本地提交：
+      - `68b9056`（`feat(ops): add git sync silence state labels`）
+      - `357afcf`（`docs(handoff): append items 103-104 for silence state labels`）
+    - 推送结果：
+      - 首次 `git push origin main` 失败：`Could not resolve host: github.com`
+      - 第 2 次重试失败：`Recv failure: Connection was reset`
+      - 第 3 次重试成功：`2c20841..357afcf  main -> main`
