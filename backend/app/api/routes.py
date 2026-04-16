@@ -1646,12 +1646,16 @@ def git_sync_summary(
     sync_silence_severity_score = sync_silence_overdue_rate
     if sync_silence_severity_score is None:
         sync_silence_severity_level = "missing"
+        sync_silence_severity_level_rank = 3
     elif sync_silence_severity_score >= 100.0:
         sync_silence_severity_level = "high"
+        sync_silence_severity_level_rank = 2
     elif sync_silence_severity_score > 0.0:
         sync_silence_severity_level = "medium"
+        sync_silence_severity_level_rank = 1
     else:
         sync_silence_severity_level = "low"
+        sync_silence_severity_level_rank = 0
 
     return {
         "days": ndays,
@@ -1687,6 +1691,7 @@ def git_sync_summary(
         "sync_silence_state_code": sync_silence_state_code,
         "sync_silence_severity_score": sync_silence_severity_score,
         "sync_silence_severity_level": sync_silence_severity_level,
+        "sync_silence_severity_level_rank": sync_silence_severity_level_rank,
         "consecutive_failure_streak": consecutive_failure_streak,
         "consecutive_non_success_streak": consecutive_non_success_streak,
         "sync_health_level": sync_health_level,
@@ -2051,12 +2056,16 @@ def analytics_reports(
     git_sync_event_silence_severity_score = git_sync_event_silence_overdue_rate
     if git_sync_event_silence_severity_score is None:
         git_sync_event_silence_severity_level = "missing"
+        git_sync_event_silence_severity_level_rank = 3
     elif git_sync_event_silence_severity_score >= 100.0:
         git_sync_event_silence_severity_level = "high"
+        git_sync_event_silence_severity_level_rank = 2
     elif git_sync_event_silence_severity_score > 0.0:
         git_sync_event_silence_severity_level = "medium"
+        git_sync_event_silence_severity_level_rank = 1
     else:
         git_sync_event_silence_severity_level = "low"
+        git_sync_event_silence_severity_level_rank = 0
     return {
         "report_type": norm_type,
         "days": days,
@@ -2156,6 +2165,7 @@ def analytics_reports(
         "git_sync_event_silence_state_code": git_sync_event_silence_state_code,
         "git_sync_event_silence_severity_score": git_sync_event_silence_severity_score,
         "git_sync_event_silence_severity_level": git_sync_event_silence_severity_level,
+        "git_sync_event_silence_severity_level_rank": git_sync_event_silence_severity_level_rank,
         "last_git_sync_success_at": last_git_sync_success_at.isoformat() if last_git_sync_success_at else None,
         "minutes_since_last_git_sync_success": _minutes_since(last_git_sync_success_at, now),
         "last_git_sync_failure_at": last_git_sync_failure_at.isoformat() if last_git_sync_failure_at else None,
