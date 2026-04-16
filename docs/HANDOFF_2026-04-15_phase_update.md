@@ -689,3 +689,6 @@
       - 摘要主循环内每条合法同步事件在审计投递维度上互斥归入：`success|failed`（计入 tagged）、非法非空取值、空标记；因此恒有 `tagged + invalid + empty == totals.total`，且 `untagged == invalid + empty`。
       - 运营报告侧：`empty`/`invalid` 仅对 `context.status` 为 `success|failure|skipped` 的事件计数；`git_sync_audit_delivery_success/failed` 仍来自全窗口内全部 `git_sync_status` 事件。若存在非规范 `context.status` 的存量数据，可能出现 `git_sync_audit_delivery_untagged_count` 大于 `invalid + empty` 的情况（分母仍为 `git_sync_event_count`）。
       - 最小回归：向 `test_git_sync_summary_endpoint` / `test_analytics_reports_project_execution_and_ops_risk` 追加无 `audit_delivery` 的成功样例，并校验摘要侧分拆恒等式。
+
+78. 条目 77 同步远端记录（运维追溯）
+    - 本地提交：`570c8da`（`feat(ops): audit_delivery empty breakdown for git summary and ops_risk`），已推送至 `origin/main`。
