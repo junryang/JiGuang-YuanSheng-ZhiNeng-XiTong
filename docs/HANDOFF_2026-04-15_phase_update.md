@@ -1164,3 +1164,11 @@
     - 推送结果：
       - 首次推送失败：`Recv failure: Connection was reset`
       - 重试成功：`f8b55ce..2d3a31c  main -> main`
+
+122. 条目 121 文档提交（dd6207c）推送重试补记（运维追溯）
+    - 本地提交：
+      - `dd6207c`（`docs(handoff): append item 121 retry trace`）
+    - 推送结果：
+      - 第 1 次失败：`Could not resolve host: github.com`
+      - 第 2 次失败：`Recv failure: Connection was reset`
+      - 第 3 次成功：`2d3a31c..dd6207c  main -> main`
