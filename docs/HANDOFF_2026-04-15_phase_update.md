@@ -1060,5 +1060,8 @@
       - 见条目 112。
 
 112. 条目 111 同步远端记录（运维追溯）
-    - 本地提交：（待 commit 后回填）
-    - 推送结果：（待 push/重试后回填）
+    - 本地提交：
+      - `7089a37`（`feat(ops): add git sync silence severity level ranks`）
+      - `e2eb92d`（`docs(handoff): append items 111-112 for silence severity level ranks`）
+    - 推送结果：
+      - `git push origin main` 一次成功：`5535363..e2eb92d  main -> main`
