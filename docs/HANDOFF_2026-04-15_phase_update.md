@@ -1033,5 +1033,9 @@
       - 见条目 110。
 
 110. 条目 109 同步远端记录（运维追溯）
-    - 本地提交：（待 commit 后回填）
-    - 推送结果：（待 push/重试后回填）
+    - 本地提交：
+      - `67ceeb3`（`feat(ops): add git sync silence severity levels`）
+      - `08eddb5`（`docs(handoff): append items 109-110 for silence severity levels`）
+    - 推送结果：
+      - 首次 `git push origin main` 失败：`Recv failure: Connection was reset`
+      - 第 2 次重试成功：`b02b91f..08eddb5  main -> main`
