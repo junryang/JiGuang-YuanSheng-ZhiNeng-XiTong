@@ -733,3 +733,40 @@
 
 86. 条目 85 同步远端记录（运维追溯）
     - 本地提交：`e0ddc37`（`feat(ops): audit_delivery untagged last-seen timestamps`），已推送至 `origin/main`。
+
+87. Git 同步摘要与运营风险报告补充链路静默告警字段（完成后增强）
+    - 文件：`backend/app/api/routes.py`、`backend/tests/test_api_smoke.py`
+    - 接口字段（兼容追加，不破坏既有字段）：
+      - `GET /api/v1/ops/git-sync/summary` 新增：`sync_silence_warning`（`bool`）
+      - `GET /api/v1/analytics/reports?report_type=ops_risk` 新增：`git_sync_event_silence_warning`（`bool`）
+    - 统计口径：
+      - 统一基于“最近 Git 同步事件距今分钟数”判定；
+      - 当最近事件缺失（`minutes_since_*` 为 `null`）或超过查询窗口分钟数（`days*24*60`）时置为 `true`，否则为 `false`。
+    - 测试覆盖：
+      - 最小回归 `python -m pytest tests/test_api_smoke.py -q --tb=short`
+      - 新增断言校验上述两个字段存在且类型为 `bool`。
+    - 推送结果：
+      - 本轮已执行提交流程与 `git push origin main`，但当前自动化终端未返回可读的提交回执；需在本地终端复核最终远端状态。
+
+88. 条目 87 同步状态复核占位（运维追溯）
+    - 目标提交信息：
+      - `feat(ops): add git sync silence warning observability`
+      - `docs(handoff): append item 87 for silence warning metrics`
+    - 当前状态：
+      - 已完成代码与文档变更、并通过最小回归；
+      - 自动化会话未能读取到新增提交 SHA 与远端确认信息，建议在本地命令行执行 `git log -2 --oneline` 与 `git push origin main` 复核并回填本条。
+
+89. Git 同步摘要与运营风险报告补充静默阈值分钟数字段（完成后增强）
+    - 文件：`backend/app/api/routes.py`、`backend/tests/test_api_smoke.py`
+    - 接口字段（兼容追加，不破坏既有字段）：
+      - `GET /api/v1/ops/git-sync/summary` 新增：`sync_silence_threshold_minutes`（`int`）
+      - `GET /api/v1/analytics/reports?report_type=ops_risk` 新增：`git_sync_event_silence_threshold_minutes`（`int`）
+    - 统计口径：
+      - 与既有静默告警保持同口径，阈值固定为查询窗口分钟数（`days*24*60`），用于解释告警判定边界。
+      - 关系：`*_silence_warning = (minutes_since_last_event is null) or (minutes_since_last_event > *_silence_threshold_minutes)`。
+    - 测试覆盖：
+      - 目标最小回归：`python -m pytest tests/test_api_smoke.py -q --tb=short`
+      - 增量断言：新增阈值字段存在性与 `int` 类型校验。
+      - 实际执行：一次定向回归报错（`NameError`，已修复），后续全量最小回归在当前环境出现长时间阻塞；中断后待下一轮复跑确认。
+    - 推送结果：
+      - 本条将在提交与推送完成后补充 SHA 与重试状态。
