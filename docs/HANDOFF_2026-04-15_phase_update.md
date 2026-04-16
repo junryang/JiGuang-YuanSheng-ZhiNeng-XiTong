@@ -806,3 +806,18 @@
       - 第 3 次重试成功：`a12db90..1c53764  main -> main`
     - 处置结论：
       - 属于瞬时网络/TLS波动，代码与文档已成功推送到远端 `main`，无需回滚。
+
+93. Git 同步摘要与运营风险报告补充静默超阈值比例字段（完成后增强）
+    - 文件：`backend/app/api/routes.py`、`backend/tests/test_api_smoke.py`
+    - 接口字段（兼容追加，不破坏既有字段）：
+      - `GET /api/v1/ops/git-sync/summary` 新增：`sync_silence_overdue_rate`（`float|null`）
+      - `GET /api/v1/analytics/reports?report_type=ops_risk` 新增：`git_sync_event_silence_overdue_rate`（`float|null`）
+    - 统计口径：
+      - 统一为 `sync_silence_overdue_minutes / silence_threshold_minutes * 100`，保留 1 位小数；
+      - 当最近事件不存在（`minutes_since_last_event=null`）时，该字段返回 `null`。
+    - 测试覆盖：
+      - 最小回归：`python -m pytest tests/test_api_smoke.py -q --tb=short`
+      - 结果：`48 passed in 134.87s`
+      - 新增断言：字段存在且在当前样例下类型为 `float`。
+    - 推送结果：
+      - 本条将在提交并推送完成后补充 SHA 与重试状态。
